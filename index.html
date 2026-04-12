@@ -1977,17 +1977,44 @@ showView('main-view'); // set a base, overlay covers it
 
 <!-- ═══ QR SIZE MODAL ═══ -->
 <div class="modal-overlay" id="qr-size-modal" onclick="if(event.target===this)closeQRSizeModal()">
-  <div class="modal" style="width:360px">
-    <h3>Label Size</h3>
-    <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;margin-bottom:8px">Choose a size for the printed QR labels.</p>
-    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
-      <label class="size-option selected"><input type="radio" name="qr-size" value="80" checked onchange="selectQRSize(this)" /><div><div class="size-option-label">Small</div><div class="size-option-sub">~1.5" — fits 6+ per page</div></div></label>
-      <label class="size-option"><input type="radio" name="qr-size" value="130" onchange="selectQRSize(this)" /><div><div class="size-option-label">Medium</div><div class="size-option-sub">~2.5" — fits 4 per page</div></div></label>
-      <label class="size-option"><input type="radio" name="qr-size" value="200" onchange="selectQRSize(this)" /><div><div class="size-option-label">Large</div><div class="size-option-sub">~3.5" — fits 2 per page</div></div></label>
+  <div class="modal" style="width:400px">
+    <h3>QR Label Size</h3>
+    <p style="font-size:0.75rem;color:var(--muted);line-height:1.6;margin-bottom:12px">Select how large each label should print. Counts assume standard 8.5"×11" paper with margins.</p>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+      <label class="size-option selected">
+        <input type="radio" name="qr-size" value="80" checked onchange="selectQRSize(this)" />
+        <div style="flex:1">
+          <div style="display:flex;justify-content:space-between;align-items:baseline">
+            <div class="size-option-label">Small</div>
+            <div class="size-option-sub">~1.1" × 1.1"</div>
+          </div>
+          <div class="size-option-sub" style="margin-top:2px">Approx. 56 labels per page (7 × 8)</div>
+        </div>
+      </label>
+      <label class="size-option">
+        <input type="radio" name="qr-size" value="130" onchange="selectQRSize(this)" />
+        <div style="flex:1">
+          <div style="display:flex;justify-content:space-between;align-items:baseline">
+            <div class="size-option-label">Medium</div>
+            <div class="size-option-sub">~1.8" × 1.8"</div>
+          </div>
+          <div class="size-option-sub" style="margin-top:2px">Approx. 20 labels per page (4 × 5)</div>
+        </div>
+      </label>
+      <label class="size-option">
+        <input type="radio" name="qr-size" value="200" onchange="selectQRSize(this)" />
+        <div style="flex:1">
+          <div style="display:flex;justify-content:space-between;align-items:baseline">
+            <div class="size-option-label">Large</div>
+            <div class="size-option-sub">~2.8" × 2.8"</div>
+          </div>
+          <div class="size-option-sub" style="margin-top:2px">Approx. 6 labels per page (2 × 3)</div>
+        </div>
+      </label>
     </div>
     <div class="modal-actions">
       <button class="ghost" onclick="closeQRSizeModal()">Cancel</button>
-      <button onclick="confirmPrintAllQR()">Print</button>
+      <button onclick="confirmPrintAllQR()">🖨 Print Labels</button>
     </div>
   </div>
 </div>
