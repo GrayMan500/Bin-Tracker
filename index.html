@@ -261,6 +261,77 @@
   .field-group { display: flex; flex-direction: column; gap: 4px; }
   .field-label { font-size: 0.65rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
 
+
+  .bin-number {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.85rem;
+    color: var(--surface2);
+    background: var(--accent);
+    border-radius: 3px;
+    padding: 1px 7px;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+  }
+  .detail-bin-number {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.2rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    align-self: flex-end;
+    padding-bottom: 6px;
+  }
+  .renumber-btn {
+    font-size: 0.7rem;
+    padding: 4px 10px;
+  }
+
+
+  /* ── DUPLICATE WARNING ── */
+  .dup-warning {
+    background: #2a1f00;
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-size: 0.75rem;
+    color: var(--accent);
+    line-height: 1.5;
+    margin-bottom: 8px;
+    display: none;
+  }
+  .dup-warning.visible { display: block; }
+
+  /* ── TRASH / RECENTLY DELETED ── */
+  .trash-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .trash-item-info { flex: 1; min-width: 0; }
+  .trash-item-name { font-size: 0.85rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .trash-item-meta { font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .trash-empty { text-align: center; padding: 32px; color: var(--muted); font-size: 0.82rem; }
+
+  /* ── QR SIZE MODAL ── */
+  .size-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .size-option:hover { border-color: var(--accent); }
+  .size-option.selected { border-color: var(--accent); background: rgba(240,192,64,0.08); }
+  .size-option input[type=radio] { accent-color: var(--accent); }
+  .size-option-label { font-size: 0.82rem; }
+  .size-option-sub { font-size: 0.68rem; color: var(--muted); }
+
   /* ── SYNC STATUS ── */
   /* ── HEADER ── */
   header {
@@ -347,6 +418,77 @@
 
   .field-group { display: flex; flex-direction: column; gap: 4px; }
   .field-label { font-size: 0.65rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
+
+
+  .bin-number {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.85rem;
+    color: var(--surface2);
+    background: var(--accent);
+    border-radius: 3px;
+    padding: 1px 7px;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+  }
+  .detail-bin-number {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.2rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    align-self: flex-end;
+    padding-bottom: 6px;
+  }
+  .renumber-btn {
+    font-size: 0.7rem;
+    padding: 4px 10px;
+  }
+
+
+  /* ── DUPLICATE WARNING ── */
+  .dup-warning {
+    background: #2a1f00;
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-size: 0.75rem;
+    color: var(--accent);
+    line-height: 1.5;
+    margin-bottom: 8px;
+    display: none;
+  }
+  .dup-warning.visible { display: block; }
+
+  /* ── TRASH / RECENTLY DELETED ── */
+  .trash-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .trash-item-info { flex: 1; min-width: 0; }
+  .trash-item-name { font-size: 0.85rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .trash-item-meta { font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .trash-empty { text-align: center; padding: 32px; color: var(--muted); font-size: 0.82rem; }
+
+  /* ── QR SIZE MODAL ── */
+  .size-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .size-option:hover { border-color: var(--accent); }
+  .size-option.selected { border-color: var(--accent); background: rgba(240,192,64,0.08); }
+  .size-option input[type=radio] { accent-color: var(--accent); }
+  .size-option-label { font-size: 0.82rem; }
+  .size-option-sub { font-size: 0.68rem; color: var(--muted); }
 
   /* ── SYNC STATUS ── */
   .sync-badge {
@@ -860,8 +1002,10 @@
       <div class="sync-badge" id="sync-badge"><div class="sync-dot"></div> <span id="sync-text">Live</span></div>
       <input type="file" id="import-file-input" accept=".xlsx,.csv" onchange="handleImportFile(event)" style="display:none" />
       <button class="ghost" onclick="document.getElementById('import-file-input').click()">⬆ Import</button>
-      <button class="ghost" onclick="printAllQR()">🖨 Print All QR</button>
+      <button class="ghost" onclick="openQRSizeModal()">🖨 Print All QR</button>
       <button class="ghost" onclick="exportCSV()">⬇ Export CSV</button>
+      <button class="ghost" onclick="exportInsurance()">📋 Insurance Report</button>
+      <button class="ghost" onclick="openTrashModal()">🗑 Recently Deleted</button>
       <div class="user-chip" id="user-chip" style="display:none">
         <img id="user-avatar" src="" alt="" />
         <span id="user-name"></span>
@@ -877,8 +1021,9 @@
     <div class="overview-title">Overview</div>
     <div class="overview-panel" id="overview-grid"></div>
   </div>
-  <div class="section-title-bar">
+  <div class="section-title-bar" style="display:flex;align-items:center;gap:12px">
     <span class="section-title">Bins</span>
+    <button class="ghost renumber-btn" onclick="openRenumberModal()">⟳ Renumber</button>
   </div>
   <div class="add-bin-bar">
     <input type="text" id="new-bin-name" placeholder="New bin name (e.g. Kitchen, Books, Clothes…)" />
@@ -892,6 +1037,7 @@
 <div id="detail-view" class="view">
   <div class="detail-header">
     <button class="ghost" onclick="showMain()">← Back</button>
+    <span class="detail-bin-number" id="detail-bin-number"></span>
     <h2 id="detail-bin-name"></h2>
     <button class="ghost" onclick="openRenameModal()">✏ Rename</button>
   </div>
@@ -901,7 +1047,7 @@
       <div class="add-item-grid">
         <div class="field-group">
           <span class="field-label">Item name</span>
-          <input type="text" id="new-item-name" placeholder="e.g. Cast iron skillet" />
+          <input type="text" id="new-item-name" placeholder="e.g. Cast iron skillet" oninput="checkDuplicate()" />
         </div>
         <div class="field-group">
           <span class="field-label">Qty</span>
@@ -929,6 +1075,7 @@
         <span class="field-label">Additional info (optional)</span>
         <input type="text" id="new-item-notes" placeholder="e.g. 1 left out for ROTC, NOT IN TUB…" />
       </div>
+      <div class="dup-warning" id="dup-warning"></div>
       <button onclick="addItem()">+ Add Item</button>
     </div>
 
@@ -1203,6 +1350,8 @@ window.showDetail = function(binId) {
   activeBinId = binId;
   const bin = bins.find(b => b.id === binId);
   if (!bin) return;
+  const binIndex = bins.findIndex(b => b.id === binId);
+  document.getElementById('detail-bin-number').textContent = binIndex >= 0 ? '#' + (binIndex + 1) : '';
   document.getElementById('detail-bin-name').textContent = bin.name;
   ['new-item-name','new-item-link','new-item-size'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('new-item-qty').value = '1';
@@ -1271,6 +1420,8 @@ window.deleteBin = function(binId) {
   document.getElementById('delete-modal').classList.add('open');
 }
 
+window._pendingDeleteBin = null;
+
 window.closeDeleteModal = function() {
   document.getElementById('delete-modal').classList.remove('open');
   pendingDeleteBinId = null;
@@ -1279,6 +1430,8 @@ window.closeDeleteModal = function() {
 window.confirmDeleteBin = async function() {
   if (!pendingDeleteBinId) return;
   const binId = pendingDeleteBinId;
+  const bin = bins.find(b => b.id === binId);
+  if (bin) trashItems.push({ type:'bin', binName: bin.name, data: JSON.parse(JSON.stringify(bin)), deletedAt: Date.now() });
   closeDeleteModal();
   setSyncStatus('syncing');
   await deleteDoc(doc(collection(db,'bins'), binId));
@@ -1309,16 +1462,17 @@ function renderBins() {
     grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="icon">📦</div><p>No bins yet.<br>Add your first one above to get started.</p></div>';
     return;
   }
-  grid.innerHTML = bins.map(bin => {
+  grid.innerHTML = bins.map((bin, idx) => {
     const items = bin.items || [];
     const total = items.reduce((s, i) => s + (i.value || 0) * (i.qty || 1), 0);
+    const num = idx + 1;
     const preview = items.slice(0, 3).map(i => {
       const lineVal = (i.value || 0) * (i.qty || 1);
       return '<div class="bin-preview-item"><span class="item-name">' + esc(i.name) + (i.qty > 1 ? ' ×' + i.qty : '') + '</span><span>$' + lineVal.toFixed(2) + '</span></div>';
     }).join('');
     const more = items.length > 3 ? '<div class="bin-preview-item"><span style="color:var(--muted)">+' + (items.length - 3) + ' more…</span></div>' : '';
     return '<div class="bin-card" onclick="showDetail(\'' + bin.id + '\')">' +
-      '<div class="bin-card-top"><span class="bin-label">' + esc(bin.name) + '</span><span class="bin-count">' + items.length + ' item' + (items.length !== 1 ? 's' : '') + '</span></div>' +
+      '<div class="bin-card-top"><span class="bin-label">' + esc(bin.name) + '</span><div style="display:flex;align-items:center;gap:8px"><span class="bin-count">' + items.length + ' item' + (items.length !== 1 ? 's' : '') + '</span><span class="bin-number">#' + num + '</span></div></div>' +
       '<div class="bin-card-body">' + preview + more + '</div>' +
       '<div class="bin-card-footer">' +
         '<div class="bin-total">Total: <strong>$' + total.toFixed(2) + '</strong></div>' +
@@ -1374,6 +1528,8 @@ window.addItem = async function() {
 window.deleteItem = async function(itemId) {
   const bin = bins.find(b => b.id === activeBinId);
   if (!bin) return;
+  const item = (bin.items||[]).find(i => i.id === itemId);
+  if (item) trashItems.push({ type:'item', binName: bin.name, itemName: item.name, data: JSON.parse(JSON.stringify(item)), deletedAt: Date.now() });
   const updatedItems = (bin.items || []).filter(i => i.id !== itemId);
   setSyncStatus('syncing');
   await updateDoc(doc(collection(db,'bins'), activeBinId), { items: updatedItems });
@@ -1681,7 +1837,8 @@ window.handleImportFile = async function(event) {
 
 
 // ─── PRINT ALL QR CODES ───────────────────────────────────────
-window.printAllQR = function() {
+window.doPrintAllQR = function(qrSize) {
+  qrSize = qrSize || 160;
   if (bins.length === 0) { alert('No bins to print yet!'); return; }
 
   const baseURL = window.location.href.split('#')[0];
@@ -1698,7 +1855,7 @@ window.printAllQR = function() {
     offscreen.appendChild(wrapper);
     new QRCode(wrapper, {
       text: url,
-      width: 200, height: 200,
+      width: qrSize, height: qrSize,
       colorDark: '#111111',
       colorLight: '#ffffff',
       correctLevel: QRCode.CorrectLevel.M
@@ -1746,7 +1903,7 @@ window.printAllQR = function() {
         width: fit-content;
       }
       .label-name { font-size: 1rem; font-weight: bold; letter-spacing: 0.04em; text-align: center; }
-      .qr-img { width: 160px; height: 160px; display: block; }
+      .qr-img { width: ' + qrSize + 'px; height: ' + qrSize + 'px; display: block; }
       @media print {
         body { padding: 6px; }
         .grid { gap: 8px; }
@@ -1803,6 +1960,230 @@ function renderOverview() {
     stat('With Links',   allItems.filter(i => i.link).length, 'purchase links',     '', 'row-last row2');
 }
 
+
+// ─── RENUMBER BINS ────────────────────────────────────────────
+let renumberOrder = [];
+
+window.openRenumberModal = function() {
+  renumberOrder = bins.map(b => b.id);
+  renderRenumberList();
+  document.getElementById('renumber-modal').classList.add('open');
+}
+
+window.closeRenumberModal = function() {
+  document.getElementById('renumber-modal').classList.remove('open');
+}
+
+function renderRenumberList() {
+  const list = document.getElementById('renumber-list');
+  list.innerHTML = renumberOrder.map((id, idx) => {
+    const bin = bins.find(b => b.id === id);
+    return '<div class="renumber-item" data-id="' + id + '" draggable="true" ' +
+      'ondragstart="rDragStart(event)" ondragover="rDragOver(event)" ondrop="rDrop(event)" ' +
+      'style="display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:10px 12px;cursor:grab">' +
+      '<span style="font-family:Bebas Neue,sans-serif;color:var(--accent);font-size:1rem;width:28px;flex-shrink:0">#' + (idx + 1) + '</span>' +
+      '<span style="font-size:0.85rem;flex:1">' + esc(bin ? bin.name : id) + '</span>' +
+      '<span style="color:var(--muted);font-size:0.8rem">⠿</span>' +
+      '</div>';
+  }).join('');
+}
+
+let dragSrcId = null;
+window.rDragStart = function(e) {
+  dragSrcId = e.currentTarget.dataset.id;
+  e.dataTransfer.effectAllowed = 'move';
+}
+window.rDragOver = function(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+}
+window.rDrop = function(e) {
+  e.preventDefault();
+  const targetId = e.currentTarget.dataset.id;
+  if (!dragSrcId || dragSrcId === targetId) return;
+  const srcIdx = renumberOrder.indexOf(dragSrcId);
+  const tgtIdx = renumberOrder.indexOf(targetId);
+  renumberOrder.splice(srcIdx, 1);
+  renumberOrder.splice(tgtIdx, 0, dragSrcId);
+  renderRenumberList();
+}
+
+window.saveRenumber = async function() {
+  setSyncStatus('syncing');
+  const now = Date.now();
+  for (let i = 0; i < renumberOrder.length; i++) {
+    await updateDoc(doc(collection(db,'bins'), renumberOrder[i]), { createdAt: now + i });
+  }
+  setSyncStatus('synced');
+  closeRenumberModal();
+}
+
+
+// ─── TRASH (RECENTLY DELETED) ────────────────────────────────
+let trashItems = []; // { type:'bin'|'item', binName, itemName, data, deletedAt }
+
+window.openTrashModal = function() {
+  renderTrashList();
+  document.getElementById('trash-modal').classList.add('open');
+}
+window.closeTrashModal = function() { document.getElementById('trash-modal').classList.remove('open'); }
+window.clearTrash = function() { trashItems = []; renderTrashList(); }
+
+function renderTrashList() {
+  const list = document.getElementById('trash-list');
+  if (trashItems.length === 0) {
+    list.innerHTML = '<div class="trash-empty">Nothing deleted yet this session.</div>';
+    return;
+  }
+  list.innerHTML = [...trashItems].reverse().map((t, ri) => {
+    const i = trashItems.length - 1 - ri;
+    const ago = Math.round((Date.now() - t.deletedAt) / 1000);
+    const agoStr = ago < 60 ? ago + 's ago' : Math.round(ago/60) + 'm ago';
+    const label = t.type === 'bin'
+      ? '📦 ' + t.binName
+      : '📝 ' + t.itemName + ' <span style="color:var(--muted)">in ' + t.binName + '</span>';
+    return '<div class="trash-item">' +
+      '<div class="trash-item-info">' +
+        '<div class="trash-item-name">' + label + '</div>' +
+        '<div class="trash-item-meta">' + (t.type === 'bin' ? (t.data.items||[]).length + ' items · ' : '') + 'Deleted ' + agoStr + '</div>' +
+      '</div>' +
+      '<button onclick="restoreTrash(' + i + ')" style="padding:6px 12px;font-size:0.75rem">Restore</button>' +
+    '</div>';
+  }).join('');
+}
+
+window.restoreTrash = async function(idx) {
+  const t = trashItems[idx];
+  if (!t) return;
+  setSyncStatus('syncing');
+  if (t.type === 'bin') {
+    const id = uid();
+    await setDoc(doc(collection(db,'bins'), id), { ...t.data, id: undefined, createdAt: Date.now(), ownerId: currentUser ? currentUser.uid : 'viewonly' });
+  } else {
+    // restore item back into its bin (find by name)
+    const bin = bins.find(b => b.name === t.binName);
+    if (bin) {
+      const updatedItems = [...(bin.items||[]), t.data];
+      await updateDoc(doc(collection(db,'bins'), bin.id), { items: updatedItems });
+    } else {
+      alert('Original bin "' + t.binName + '" no longer exists. Create it first then try again.');
+      setSyncStatus('synced');
+      return;
+    }
+  }
+  setSyncStatus('synced');
+  trashItems.splice(idx, 1);
+  renderTrashList();
+}
+
+// ─── DUPLICATE WARNING ────────────────────────────────────────
+function similarity(a, b) {
+  a = a.toLowerCase().replace(/[^a-z0-9]/g, '');
+  b = b.toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (a === b) return 1;
+  if (a.includes(b) || b.includes(a)) return 0.85;
+  // Simple bigram similarity
+  const bigrams = s => { const bg = new Set(); for (let i=0;i<s.length-1;i++) bg.add(s[i]+s[i+1]); return bg; };
+  const ba = bigrams(a), bb = bigrams(b);
+  let inter = 0;
+  ba.forEach(bg => { if (bb.has(bg)) inter++; });
+  return (2 * inter) / (ba.size + bb.size || 1);
+}
+
+window.checkDuplicate = function() {
+  const name = document.getElementById('new-item-name').value.trim();
+  const warn = document.getElementById('dup-warning');
+  if (name.length < 2) { warn.classList.remove('visible'); return; }
+  const matches = [];
+  bins.forEach(bin => {
+    (bin.items||[]).forEach(item => {
+      const score = similarity(name, item.name);
+      if (score >= 0.75) matches.push({ binName: bin.name, itemName: item.name, score });
+    });
+  });
+  matches.sort((a,b) => b.score - a.score);
+  if (matches.length > 0) {
+    warn.innerHTML = '⚠ Similar item' + (matches.length > 1 ? 's' : '') + ' already exist: ' +
+      matches.slice(0,3).map(m => '<strong>' + esc(m.itemName) + '</strong> in <em>' + esc(m.binName) + '</em>').join(', ');
+    warn.classList.add('visible');
+  } else {
+    warn.classList.remove('visible');
+  }
+}
+
+// ─── QR LABEL SIZE ────────────────────────────────────────────
+let selectedQRSize = 80;
+
+window.selectQRSize = function(radio) {
+  selectedQRSize = parseInt(radio.value);
+  document.querySelectorAll('.size-option').forEach(el => el.classList.remove('selected'));
+  radio.closest('.size-option').classList.add('selected');
+}
+
+window.openQRSizeModal = function() {
+  document.getElementById('qr-size-modal').classList.add('open');
+}
+window.closeQRSizeModal = function() {
+  document.getElementById('qr-size-modal').classList.remove('open');
+}
+
+window.confirmPrintAllQR = function() {
+  closeQRSizeModal();
+  doPrintAllQR(selectedQRSize);
+}
+
+// ─── INSURANCE REPORT ────────────────────────────────────────
+window.exportInsurance = function() {
+  if (bins.length === 0) { alert('No bins to report yet!'); return; }
+  const allItems = bins.flatMap(b => (b.items||[]).map(i => ({ ...i, binName: b.name })));
+  const grandTotal = allItems.reduce((s, i) => s + (i.value||0)*(i.qty||1), 0);
+  const date = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+
+  const rows = bins.map((bin, bi) => {
+    const items = bin.items || [];
+    const binTotal = items.reduce((s, i) => s + (i.value||0)*(i.qty||1), 0);
+    const itemRows = items.map(i => {
+      const lineVal = (i.value||0)*(i.qty||1);
+      return '<tr>' +
+        '<td style="padding:6px 10px;border-bottom:1px solid #eee">' + (i.name||'').replace(/</g,'&lt;') + '</td>' +
+        '<td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:center">' + (i.qty||1) + '</td>' +
+        '<td style="padding:6px 10px;border-bottom:1px solid #eee">' + (i.size||'—') + '</td>' +
+        '<td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right">$' + (i.value||0).toFixed(2) + '</td>' +
+        '<td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right;font-weight:600">$' + lineVal.toFixed(2) + '</td>' +
+      '</tr>';
+    }).join('');
+    return '<tr><td colspan="5" style="padding:10px 10px 4px;background:#f7f7f7;font-weight:700;font-size:1rem">📦 BIN #' + (bi+1) + ' — ' + bin.name.replace(/</g,'&lt;') + '</td></tr>' +
+      itemRows +
+      '<tr><td colspan="4" style="padding:6px 10px;text-align:right;font-style:italic;color:#555">Bin Total</td><td style="padding:6px 10px;text-align:right;font-weight:700;color:#333">$' + binTotal.toFixed(2) + '</td></tr>' +
+      '<tr><td colspan="5" style="padding:4px"></td></tr>';
+  }).join('');
+
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head><title>Insurance Inventory Report</title>
+  <style>
+    body { font-family: Georgia, serif; padding: 40px; color: #111; max-width: 900px; margin: 0 auto; }
+    h1 { font-size: 1.8rem; margin-bottom: 4px; }
+    .subtitle { font-size: 0.9rem; color: #555; margin-bottom: 24px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th { text-align: left; padding: 8px 10px; border-bottom: 2px solid #111; font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; }
+    th:last-child, th:nth-child(4) { text-align: right; }
+    .grand-total { margin-top: 24px; text-align: right; font-size: 1.1rem; font-weight: bold; border-top: 3px double #111; padding-top: 12px; }
+    .footer { margin-top: 40px; font-size: 0.78rem; color: #888; border-top: 1px solid #ddd; padding-top: 12px; }
+    @media print { body { padding: 20px; } }
+  </style></head><body>
+  <h1>Moving Inventory — Insurance Report</h1>
+  <div class="subtitle">Prepared: ${date} &nbsp;·&nbsp; Total Bins: ${bins.length} &nbsp;·&nbsp; Total Items: ${allItems.reduce((s,i)=>s+(i.qty||1),0)}</div>
+  <table>
+    <thead><tr><th>Item</th><th>Qty</th><th>Size</th><th>Unit Value</th><th>Line Total</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <div class="grand-total">Grand Total Estimated Value: $${grandTotal.toFixed(2)}</div>
+  <div class="footer">This report was generated by Bin Tracker for personal insurance and moving documentation purposes. Values are estimates provided by the owner.</div>
+  <script>window.onload=()=>window.print();<\/script>
+  </body></html>`);
+  win.document.close();
+}
+
 // ─── CSV EXPORT ───────────────────────────────────────────────
 window.exportCSV = function() {
   if (bins.length === 0) { alert('No bins to export yet!'); return; }
@@ -1846,6 +2227,58 @@ document.getElementById('rename-input').addEventListener('keydown', e => {
 // ─── INIT ─────────────────────────────────────────────────────
 // Real-time listener handles initial load — show loading overlay until first snapshot
 showView('main-view'); // set a base, overlay covers it
+<!-- ═══ RENUMBER MODAL ═══ -->
+<div class="modal-overlay" id="renumber-modal" onclick="if(event.target===this)closeRenumberModal()">
+  <div class="modal" style="width:420px">
+    <h3>Renumber Bins</h3>
+    <p style="font-size:0.78rem;color:var(--muted);line-height:1.6">Drag to reorder, then save to apply new numbers.</p>
+    <div id="renumber-list" style="display:flex;flex-direction:column;gap:6px;margin:8px 0;max-height:320px;overflow-y:auto"></div>
+    <div class="modal-actions">
+      <button class="ghost" onclick="closeRenumberModal()">Cancel</button>
+      <button onclick="saveRenumber()">Save Order</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ QR LABEL SIZE MODAL ═══ -->
+<div class="modal-overlay" id="qr-size-modal" onclick="if(event.target===this)closeQRSizeModal()">
+  <div class="modal" style="width:360px">
+    <h3>Label Size</h3>
+    <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;margin-bottom:4px">Choose a size for the printed QR labels.</p>
+    <div style="display:flex;flex-direction:column;gap:8px;margin:8px 0">
+      <label class="size-option selected" id="size-opt-sm">
+        <input type="radio" name="qr-size" value="80" checked onchange="selectQRSize(this)" />
+        <div><div class="size-option-label">Small</div><div class="size-option-sub">~1.5" × 1.5" — fits 6 per page</div></div>
+      </label>
+      <label class="size-option" id="size-opt-md">
+        <input type="radio" name="qr-size" value="130" onchange="selectQRSize(this)" />
+        <div><div class="size-option-label">Medium</div><div class="size-option-sub">~2.5" × 2.5" — fits 4 per page</div></div>
+      </label>
+      <label class="size-option" id="size-opt-lg">
+        <input type="radio" name="qr-size" value="200" onchange="selectQRSize(this)" />
+        <div><div class="size-option-label">Large</div><div class="size-option-sub">~3.5" × 3.5" — fits 2 per page</div></div>
+      </label>
+    </div>
+    <div class="modal-actions">
+      <button class="ghost" onclick="closeQRSizeModal()">Cancel</button>
+      <button onclick="confirmPrintAllQR()">Print</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ RECENTLY DELETED MODAL ═══ -->
+<div class="modal-overlay" id="trash-modal" onclick="if(event.target===this)closeTrashModal()">
+  <div class="modal" style="width:480px">
+    <h3>Recently Deleted</h3>
+    <p style="font-size:0.75rem;color:var(--muted);line-height:1.6">Items and bins deleted in this session. Closes when you sign out.</p>
+    <div id="trash-list" style="display:flex;flex-direction:column;gap:8px;margin:12px 0;max-height:340px;overflow-y:auto"></div>
+    <div class="modal-actions">
+      <button class="ghost" onclick="closeTrashModal()">Close</button>
+      <button class="danger" onclick="clearTrash()">Clear All</button>
+    </div>
+  </div>
+</div>
+
 </script>
 </body>
 </html>
