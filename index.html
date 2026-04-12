@@ -125,6 +125,29 @@
   input::placeholder { color: var(--muted); }
   select option { background: var(--surface); color: var(--text); }
 
+
+  .notes-badge {
+    display: inline-block;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 6px;
+    font-size: 0.7rem;
+    color: var(--muted);
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+  .import-btn-wrap {
+    padding: 0 24px 0;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  #import-file-input { display: none; }
+
   .field-group { display: flex; flex-direction: column; gap: 4px; }
   .field-label { font-size: 0.65rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
 
@@ -355,6 +378,18 @@
   }
   .del-btn:hover { color: var(--danger) !important; background: none !important; transform: none !important; }
 
+  .editable-cell {
+    cursor: pointer;
+    border-radius: 3px;
+    padding: 2px 5px;
+    margin: -2px -5px;
+    transition: background 0.15s;
+    display: inline-block;
+  }
+  .editable-cell:hover { background: var(--surface2); }
+  .editable-cell::after { content: " ✎"; font-size: 0.6rem; color: var(--border); vertical-align: super; }
+  .editable-cell:hover::after { color: var(--accent); }
+
   .total-row {
     display: flex;
     justify-content: flex-end;
@@ -465,6 +500,10 @@
     <input type="text" id="search-input" placeholder="🔍  Search items across all bins…" oninput="onSearch()" />
     <span class="search-count" id="search-count"></span>
   </div>
+  <div class="import-btn-wrap">
+    <input type="file" id="import-file-input" accept=".xlsx,.csv" onchange="handleImportFile(event)" />
+    <button class="ghost" onclick="document.getElementById('import-file-input').click()">⬆ Import Bin from Excel/CSV</button>
+  </div>
   <div class="add-bin-bar">
     <input type="text" id="new-bin-name" placeholder="New bin name (e.g. Kitchen, Books, Clothes…)" />
     <button onclick="addBin()">+ Add Bin</button>
@@ -510,6 +549,10 @@
         </label>
         <input type="text" id="new-item-size" placeholder="e.g. L, 32×32, 10W…" />
       </div>
+      <div class="field-group" style="margin-bottom:12px">
+        <span class="field-label">Additional info (optional)</span>
+        <input type="text" id="new-item-notes" placeholder="e.g. 1 left out for ROTC, NOT IN TUB…" />
+      </div>
       <button onclick="addItem()">+ Add Item</button>
     </div>
 
@@ -521,6 +564,7 @@
             <th>Qty</th>
             <th>Size</th>
             <th>Purchase Link</th>
+            <th>Additional Info</th>
             <th>Line Total</th>
             <th></th>
           </tr>
@@ -568,7 +612,59 @@
   </div>
 </div>
 
+
+
+<!-- ═══ CONFIRM DELETE MODAL ═══ -->
+<div class="modal-overlay" id="delete-modal" onclick="if(event.target===this)closeDeleteModal()">
+  <div class="modal">
+    <h3>Delete Bin</h3>
+    <p style="font-size:0.82rem;color:var(--muted);line-height:1.6" id="delete-modal-msg">Are you sure?</p>
+    <div class="modal-actions" style="margin-top:12px">
+      <button class="ghost" onclick="closeDeleteModal()">Cancel</button>
+      <button class="danger" onclick="confirmDeleteBin()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ EDIT ITEM MODAL ═══ -->
+<div class="modal-overlay" id="edit-modal" onclick="if(event.target===this)closeEditModal()">
+  <div class="modal">
+    <h3>Edit Item</h3>
+    <div class="field-group" style="margin-bottom:10px">
+      <span class="field-label">Item name</span>
+      <input type="text" id="edit-item-name" placeholder="Item name" />
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div class="field-group">
+        <span class="field-label">Qty</span>
+        <input type="number" id="edit-item-qty" min="1" step="1" />
+      </div>
+      <div class="field-group">
+        <span class="field-label">Value per item ($)</span>
+        <input type="number" id="edit-item-value" min="0" step="0.01" />
+      </div>
+    </div>
+    <div class="field-group" style="margin-bottom:10px">
+      <span class="field-label">Size (optional)</span>
+      <input type="text" id="edit-item-size" placeholder="e.g. L, 32×32, 10W…" />
+    </div>
+    <div class="field-group" style="margin-bottom:10px">
+      <span class="field-label">Purchase link (optional)</span>
+      <input type="url" id="edit-item-link" placeholder="https://…" />
+    </div>
+    <div class="field-group" style="margin-bottom:10px">
+      <span class="field-label">Additional info (optional)</span>
+      <input type="text" id="edit-item-notes" placeholder="e.g. 1 left out for ROTC, NOT IN TUB…" />
+    </div>
+    <div class="modal-actions">
+      <button class="ghost" onclick="closeEditModal()">Cancel</button>
+      <button onclick="saveEditItem()">Save</button>
+    </div>
+  </div>
+</div>
+
 <!-- Firebase -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" onload="window._XLSX=XLSX"></script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getFirestore, collection, doc, onSnapshot, setDoc, deleteDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
@@ -681,6 +777,7 @@ function renderScanView(binId) {
     if (qty > 1) metaParts.push('Qty: ' + qty);
     if (item.size) metaParts.push('Size: ' + item.size);
     if (item.link) metaParts.push('<a href="' + esc(item.link) + '" target="_blank" rel="noopener" style="color:var(--accent)">View listing ↗</a>');
+    if (item.notes) metaParts.push('📝 ' + item.notes);
     const d = document.createElement('div');
     d.className = 'scan-item';
     d.innerHTML = '<span class="name">' + esc(item.name) + '</span><span class="val">$' + lineVal.toFixed(2) + '</span>' +
@@ -705,9 +802,25 @@ window.addBin = async function() {
   inp.value = '';
 }
 
-window.deleteBin = async function(binId) {
+let pendingDeleteBinId = null;
+
+window.deleteBin = function(binId) {
   const bin = bins.find(b => b.id === binId);
-  if (!confirm('Delete bin "' + (bin?.name) + '"? This cannot be undone.')) return;
+  if (!bin) return;
+  pendingDeleteBinId = binId;
+  document.getElementById('delete-modal-msg').textContent = 'Delete "' + bin.name + '"? This cannot be undone.';
+  document.getElementById('delete-modal').classList.add('open');
+}
+
+window.closeDeleteModal = function() {
+  document.getElementById('delete-modal').classList.remove('open');
+  pendingDeleteBinId = null;
+}
+
+window.confirmDeleteBin = async function() {
+  if (!pendingDeleteBinId) return;
+  const binId = pendingDeleteBinId;
+  closeDeleteModal();
   setSyncStatus('syncing');
   await deleteDoc(doc(binsCol, binId));
   setSyncStatus('synced');
@@ -766,32 +879,34 @@ window.toggleSizeField = function() {
 
 // ─── ITEMS ────────────────────────────────────────────────────
 window.addItem = async function() {
-  const nameInp = document.getElementById('new-item-name');
-  const qtyInp  = document.getElementById('new-item-qty');
-  const valInp  = document.getElementById('new-item-value');
-  const linkInp = document.getElementById('new-item-link');
-  const sizeInp = document.getElementById('new-item-size');
-  const hasSize = document.getElementById('size-toggle').checked;
+  const nameInp  = document.getElementById('new-item-name');
+  const qtyInp   = document.getElementById('new-item-qty');
+  const valInp   = document.getElementById('new-item-value');
+  const linkInp  = document.getElementById('new-item-link');
+  const sizeInp  = document.getElementById('new-item-size');
+  const notesInp = document.getElementById('new-item-notes');
+  const hasSize  = document.getElementById('size-toggle').checked;
 
   const name  = nameInp.value.trim();
   const qty   = Math.max(1, parseInt(qtyInp.value) || 1);
   const value = parseFloat(valInp.value) || 0;
   const link  = linkInp.value.trim();
   const size  = hasSize ? sizeInp.value.trim() : '';
+  const notes = notesInp.value.trim();
 
   if (!name) { nameInp.focus(); return; }
 
   const bin = bins.find(b => b.id === activeBinId);
   if (!bin) return;
 
-  const newItem = { id: uid(), name, qty, value, link, size };
+  const newItem = { id: uid(), name, qty, value, link, size, notes };
   const updatedItems = [...(bin.items || []), newItem];
 
   setSyncStatus('syncing');
   await updateDoc(doc(binsCol, activeBinId), { items: updatedItems });
   setSyncStatus('synced');
 
-  nameInp.value = ''; qtyInp.value = '1'; valInp.value = ''; linkInp.value = ''; sizeInp.value = '';
+  nameInp.value = ''; qtyInp.value = '1'; valInp.value = ''; linkInp.value = ''; sizeInp.value = ''; notesInp.value = '';
   document.getElementById('size-toggle').checked = false;
   sizeInp.style.display = 'none';
   nameInp.focus();
@@ -806,20 +921,77 @@ window.deleteItem = async function(itemId) {
   setSyncStatus('synced');
 }
 
+let editingItemId = null;
+
+window.openEditModal = function(itemId) {
+  const bin = bins.find(b => b.id === activeBinId);
+  if (!bin) return;
+  const item = (bin.items || []).find(i => i.id === itemId);
+  if (!item) return;
+  editingItemId = itemId;
+  document.getElementById('edit-item-name').value  = item.name || '';
+  document.getElementById('edit-item-qty').value   = item.qty || 1;
+  document.getElementById('edit-item-value').value = item.value || 0;
+  document.getElementById('edit-item-size').value  = item.size || '';
+  document.getElementById('edit-item-link').value  = item.link || '';
+  document.getElementById('edit-item-notes').value = item.notes || '';
+  document.getElementById('edit-modal').classList.add('open');
+  setTimeout(() => document.getElementById('edit-item-name').select(), 50);
+}
+
+window.closeEditModal = function() {
+  document.getElementById('edit-modal').classList.remove('open');
+  editingItemId = null;
+}
+
+window.saveEditItem = async function() {
+  const bin = bins.find(b => b.id === activeBinId);
+  if (!bin || !editingItemId) return;
+  const name  = document.getElementById('edit-item-name').value.trim();
+  const qty   = Math.max(1, parseInt(document.getElementById('edit-item-qty').value) || 1);
+  const value = parseFloat(document.getElementById('edit-item-value').value) || 0;
+  const size  = document.getElementById('edit-item-size').value.trim();
+  const link  = document.getElementById('edit-item-link').value.trim();
+  const notes = document.getElementById('edit-item-notes').value.trim();
+  if (!name) { document.getElementById('edit-item-name').focus(); return; }
+  const updatedItems = (bin.items || []).map(i =>
+    i.id === editingItemId ? { ...i, name, qty, value, size, link, notes } : i
+  );
+  setSyncStatus('syncing');
+  await updateDoc(doc(binsCol, activeBinId), { items: updatedItems });
+  setSyncStatus('synced');
+  closeEditModal();
+}
+
 function renderItems() {
   const bin = bins.find(b => b.id === activeBinId);
   const tbody = document.getElementById('items-tbody');
   if (!bin || !bin.items || bin.items.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted);padding:20px 10px;font-size:0.8rem;">No items yet. Add one above!</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="color:var(--muted);padding:20px 10px;font-size:0.8rem;">No items yet. Add one above!</td></tr>';
     document.getElementById('detail-total').textContent = '$0.00';
     return;
   }
   tbody.innerHTML = bin.items.map(item => {
     const qty = item.qty || 1;
     const lineVal = (item.value || 0) * qty;
-    const linkCell = item.link ? '<a href="' + esc(item.link) + '" target="_blank" rel="noopener">↗ Link</a>' : '<span style="color:var(--border)">—</span>';
-    const sizeCell = item.size ? '<span class="size-badge">' + esc(item.size) + '</span>' : '<span style="color:var(--border)">—</span>';
-    return '<tr><td>' + esc(item.name) + '</td><td>' + qty + '</td><td>' + sizeCell + '</td><td class="link-cell">' + linkCell + '</td><td class="val-cell">$' + lineVal.toFixed(2) + '</td><td><button class="del-btn" onclick="deleteItem(\'' + item.id + '\')">✕</button></td></tr>';
+    const linkCell = item.link
+      ? '<span class="editable-cell" onclick="openEditModal(\'' + item.id + '\')"><a href="' + esc(item.link) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">↗ Link</a></span>'
+      : '<span class="editable-cell" style="color:var(--muted)" onclick="openEditModal(\'' + item.id + '\')">add link</span>';
+    const sizeCell = item.size
+      ? '<span class="editable-cell size-badge" onclick="openEditModal(\'' + item.id + '\')">' + esc(item.size) + '</span>'
+      : '<span class="editable-cell" style="color:var(--muted)" onclick="openEditModal(\'' + item.id + '\')">&mdash;</span>';
+    const notesCell = item.notes
+      ? '<span class="editable-cell notes-badge" onclick="openEditModal(\'' + item.id + '\')" title="' + esc(item.notes) + '">' + esc(item.notes) + '</span>'
+      : '<span class="editable-cell" style="color:var(--muted)" onclick="openEditModal(\'' + item.id + '\')">&mdash;</span>';
+    return '<tr>' +
+      '<td><span class="editable-cell" onclick="openEditModal(\'' + item.id + '\')">' + esc(item.name) + '</span></td>' +
+      '<td><span class="editable-cell" onclick="openEditModal(\'' + item.id + '\')">' + qty + '</span></td>' +
+      '<td>' + sizeCell + '</td>' +
+      '<td class="link-cell">' + linkCell + '</td>' +
+      '<td>' + notesCell + '</td>' +
+      '<td class="val-cell"><span class="editable-cell" onclick="openEditModal(\'' + item.id + '\')">' + '$' + lineVal.toFixed(2) + '</span></td>' +
+      '<td><button class="del-btn" onclick="deleteItem(\'' + item.id + '\')">✕</button></td>' +
+      '</tr>';
   }).join('');
   const total = bin.items.reduce((s, i) => s + (i.value || 0) * (i.qty || 1), 0);
   document.getElementById('detail-total').textContent = '$' + total.toFixed(2);
@@ -917,17 +1089,108 @@ window.onSearch = function() {
   }).join('');
 }
 
+
+// ─── IMPORT BIN ───────────────────────────────────────────────
+window.handleImportFile = async function(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  event.target.value = ''; // reset so same file can be re-imported
+
+  const ext = file.name.split('.').pop().toLowerCase();
+  let rows = [];
+
+  if (ext === 'csv') {
+    const text = await file.text();
+    const lines = text.split(/\r?\n/).filter(l => l.trim());
+    const parseCSVLine = line => {
+      const result = []; let cur = ''; let inQ = false;
+      for (let i = 0; i < line.length; i++) {
+        const c = line[i];
+        if (c === '"') { if (inQ && line[i+1] === '"') { cur += '"'; i++; } else { inQ = !inQ; } }
+        else if (c === ',' && !inQ) { result.push(cur.trim()); cur = ''; }
+        else { cur += c; }
+      }
+      result.push(cur.trim());
+      return result;
+    };
+    const header = parseCSVLine(lines[0]).map(h => h.toLowerCase());
+    rows = lines.slice(1).map(l => {
+      const vals = parseCSVLine(l);
+      const obj = {};
+      header.forEach((h, i) => obj[h] = vals[i] || '');
+      return obj;
+    });
+  } else {
+    // xlsx — use SheetJS loaded from CDN
+    const data = await file.arrayBuffer();
+    const XLSX = window._XLSX;
+    if (!XLSX) { alert('Excel import is loading, please try again in a second.'); return; }
+    const wb = XLSX.read(data, { type: 'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+  }
+
+  if (rows.length === 0) { alert('No data found in file.'); return; }
+
+  // Map columns flexibly
+  function findCol(row, candidates) {
+    const keys = Object.keys(row);
+    for (const c of candidates) {
+      const found = keys.find(k => k.toLowerCase().replace(/[^a-z]/g,'').includes(c));
+      if (found) return found;
+    }
+    return null;
+  }
+
+  const sampleRow = rows[0];
+  const nameCol  = findCol(sampleRow, ['item','name','uniform','description','product']);
+  const sizeCol  = findCol(sampleRow, ['size']);
+  const qtyCol   = findCol(sampleRow, ['quantity','qty','count']);
+  const valCol   = findCol(sampleRow, ['estimatedprice','price','value','cost','unitprice']);
+  const notesCol = findCol(sampleRow, ['additionalinfo','notes','note','info','comments']);
+
+  if (!nameCol) { alert('Could not find an item name column. Make sure your file has a column like "Item", "Name", or "Description".'); return; }
+
+  const binName = file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
+  const items = rows
+    .filter(r => String(r[nameCol] || '').trim())
+    .map(r => {
+      const rawVal = String(r[valCol] || '').replace(/[$,]/g, '');
+      const rawQty = String(r[qtyCol] || '1');
+      return {
+        id: uid(),
+        name:  String(r[nameCol] || '').trim(),
+        size:  sizeCol ? String(r[sizeCol] || '').trim() : '',
+        qty:   parseInt(rawQty) || 1,
+        value: parseFloat(rawVal) || 0,
+        notes: notesCol ? String(r[notesCol] || '').trim() : '',
+        link:  ''
+      };
+    });
+
+  if (items.length === 0) { alert('No valid items found.'); return; }
+
+  const confirmed = window.confirm('Import ' + items.length + ' items into a new bin called "' + binName + '"?');
+  if (!confirmed) return;
+
+  setSyncStatus('syncing');
+  const id = uid();
+  await setDoc(doc(binsCol, id), { name: binName, items, createdAt: Date.now() });
+  setSyncStatus('synced');
+  showDetail(id);
+}
+
 // ─── CSV EXPORT ───────────────────────────────────────────────
 window.exportCSV = function() {
   if (bins.length === 0) { alert('No bins to export yet!'); return; }
-  const rows = [['Bin', 'Item', 'Qty', 'Size', 'Value Per Item ($)', 'Line Total ($)', 'Purchase Link']];
+  const rows = [['Bin', 'Item', 'Qty', 'Size', 'Additional Info', 'Value Per Item ($)', 'Line Total ($)', 'Purchase Link']];
   bins.forEach(bin => {
     if (!bin.items || bin.items.length === 0) {
       rows.push([bin.name, '(empty)', '', '', '', '0.00', '']);
     } else {
       bin.items.forEach(item => {
         const qty = item.qty || 1;
-        rows.push([bin.name, item.name, qty, item.size||'', (item.value||0).toFixed(2), ((item.value||0)*qty).toFixed(2), item.link||'']);
+        rows.push([bin.name, item.name, qty, item.size||'', item.notes||'', (item.value||0).toFixed(2), ((item.value||0)*qty).toFixed(2), item.link||'']);
       });
       const total = bin.items.reduce((s, i) => s + (i.value||0)*(i.qty||1), 0);
       rows.push([bin.name + ' — TOTAL', '', '', '', '', total.toFixed(2), '']);
@@ -951,6 +1214,7 @@ function esc(str) { return window.esc(str); }
 // ─── KEYBOARD SHORTCUTS ───────────────────────────────────────
 document.getElementById('new-bin-name').addEventListener('keydown', e => { if (e.key === 'Enter') addBin(); });
 document.getElementById('search-input').addEventListener('keydown', e => { if (e.key === 'Escape') { e.target.value = ''; onSearch(); } });
+document.getElementById('edit-item-name').addEventListener('keydown', e => { if (e.key === 'Enter') saveEditItem(); if (e.key === 'Escape') closeEditModal(); });
 document.getElementById('rename-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') confirmRename();
   if (e.key === 'Escape') closeRenameModal();
