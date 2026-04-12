@@ -65,6 +65,19 @@
     display: flex;
     align-items: center;
     gap: 12px;
+    flex-wrap: wrap;
+  }
+  .header-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+  }
+  .header-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
   }
   header h1 {
     font-family: 'Bebas Neue', sans-serif;
@@ -72,6 +85,7 @@
     letter-spacing: 0.06em;
     color: var(--accent);
     line-height: 1;
+    white-space: nowrap;
   }
   header .subtitle {
     font-size: 0.7rem;
@@ -140,13 +154,6 @@
     white-space: nowrap;
     vertical-align: middle;
   }
-  .import-btn-wrap {
-    padding: 0 24px 0;
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
-  #import-file-input { display: none; }
 
   .field-group { display: flex; flex-direction: column; gap: 4px; }
   .field-label { font-size: 0.65rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
@@ -473,9 +480,53 @@
   .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
   .empty-state p { font-size: 0.82rem; line-height: 1.6; }
 
-  @media (max-width: 600px) {
+  /* ── MOBILE ── */
+  @media (max-width: 640px) {
+    header { flex-direction: column; align-items: stretch; gap: 10px; padding: 16px 16px 0; }
+    .header-top { display: flex; align-items: center; gap: 8px; }
+    .header-top h1 { font-size: 2.2rem; }
+    .header-top .subtitle { flex: 1; }
+    .header-actions { display: flex; gap: 8px; }
+    .header-actions button { flex: 1; font-size: 0.72rem; padding: 8px 10px; }
+
+    .search-bar { padding: 12px 16px 10px; }
+    .add-bin-bar { padding: 10px 16px; }
+    .bins-grid { padding: 0 16px 32px; grid-template-columns: 1fr; gap: 12px; }
+    .search-results { padding: 0 16px 32px; }
+
+    .detail-header { padding: 14px 16px 12px; gap: 8px; }
+    .detail-header h2 { font-size: 1.8rem; }
+    .detail-header button { padding: 7px 10px; font-size: 0.72rem; }
+    .detail-body { padding: 14px 16px; }
+
     .add-item-grid { grid-template-columns: 1fr 1fr; }
-    .bins-grid { grid-template-columns: 1fr; }
+    .add-item-grid > .field-group:first-child { grid-column: 1 / -1; }
+    .add-item-grid-row2 { grid-template-columns: 1fr; }
+
+    /* On mobile: stack items as cards instead of table */
+    .table-wrap { overflow-x: visible; }
+    .items-table { min-width: unset; font-size: 0.82rem; }
+    .items-table thead { display: none; }
+    .items-table tbody tr {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 2px 8px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .items-table tbody tr:last-child { border-bottom: none; }
+    .items-table td { padding: 0; border: none; }
+    /* Name spans full width, price top right, rest below */
+    .items-table td:nth-child(1) { grid-column: 1; font-weight: 500; font-size: 0.85rem; }
+    .items-table td:nth-child(6) { grid-column: 2; grid-row: 1; text-align: right; }
+    .items-table td:nth-child(2),
+    .items-table td:nth-child(3),
+    .items-table td:nth-child(4),
+    .items-table td:nth-child(5) { grid-column: 1; font-size: 0.72rem; color: var(--muted); }
+    .items-table td:nth-child(7) { grid-column: 2; grid-row: 2 / 4; align-self: center; text-align: right; }
+
+    .qr-section { padding: 16px; }
+    .modal { padding: 20px; }
   }
 </style>
 </head>
@@ -491,18 +542,20 @@
 <!-- ═══ MAIN VIEW ═══ -->
 <div id="main-view" class="view">
   <header>
-    <h1>BIN TRACKER</h1>
-    <span class="subtitle">moving inventory</span>
-    <div class="sync-badge" id="sync-badge"><div class="sync-dot"></div> <span id="sync-text">Live</span></div>
-    <button class="ghost" onclick="exportCSV()">⬇ Export CSV</button>
+    <div class="header-top">
+      <h1>BIN TRACKER</h1>
+      <span class="subtitle">moving inventory</span>
+      <div class="sync-badge" id="sync-badge"><div class="sync-dot"></div> <span id="sync-text">Live</span></div>
+    </div>
+    <div class="header-actions">
+      <input type="file" id="import-file-input" accept=".xlsx,.csv" onchange="handleImportFile(event)" style="display:none" />
+      <button class="ghost" onclick="document.getElementById('import-file-input').click()">⬆ Import</button>
+      <button class="ghost" onclick="exportCSV()">⬇ Export CSV</button>
+    </div>
   </header>
   <div class="search-bar">
     <input type="text" id="search-input" placeholder="🔍  Search items across all bins…" oninput="onSearch()" />
     <span class="search-count" id="search-count"></span>
-  </div>
-  <div class="import-btn-wrap">
-    <input type="file" id="import-file-input" accept=".xlsx,.csv" onchange="handleImportFile(event)" />
-    <button class="ghost" onclick="document.getElementById('import-file-input').click()">⬆ Import Bin from Excel/CSV</button>
   </div>
   <div class="add-bin-bar">
     <input type="text" id="new-bin-name" placeholder="New bin name (e.g. Kitchen, Books, Clothes…)" />
