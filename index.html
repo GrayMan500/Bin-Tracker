@@ -159,7 +159,83 @@
   }
   .user-chip span { max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
 
+  /* ── HEADER ── */
+  header {
+    padding: 20px 24px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .header-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+  }
+  header h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3rem;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    line-height: 1;
+    white-space: nowrap;
+  }
+  header .subtitle {
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    flex: 1;
+  }
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+
   /* ── SYNC STATUS ── */
+  /* ── HEADER ── */
+  header {
+    padding: 20px 24px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .header-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+  }
+  header h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3rem;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    line-height: 1;
+    white-space: nowrap;
+  }
+  header .subtitle {
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    flex: 1;
+  }
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+
   /* ── SYNC STATUS ── */
   .sync-badge {
     font-size: 0.65rem;
@@ -589,12 +665,14 @@
 
   /* ── MOBILE ── */
   @media (max-width: 640px) {
-    header { flex-direction: column; align-items: stretch; gap: 10px; padding: 16px 16px 0; }
+    header { flex-direction: column; align-items: stretch; gap: 8px; padding: 14px 16px 0; }
     .header-top { display: flex; align-items: center; gap: 8px; }
-    .header-top h1 { font-size: 2.2rem; }
-    .header-top .subtitle { flex: 1; }
-    .header-actions { display: flex; gap: 8px; }
-    .header-actions button { flex: 1; font-size: 0.72rem; padding: 8px 10px; }
+    .header-top h1 { font-size: 2rem; }
+    .header-top .subtitle { flex: 1; font-size: 0.62rem; }
+    .header-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .header-actions button { font-size: 0.7rem; padding: 7px 10px; }
+    .user-chip { margin-left: auto; }
+    .user-chip span { max-width: 80px; }
 
     .search-bar { padding: 12px 16px 10px; }
     .section-title-bar { padding: 0 16px 6px; }
@@ -669,9 +747,9 @@
     <div class="header-top">
       <h1>BIN TRACKER</h1>
       <span class="subtitle">moving inventory</span>
-      <div class="sync-badge" id="sync-badge"><div class="sync-dot"></div> <span id="sync-text">Live</span></div>
     </div>
     <div class="header-actions">
+      <div class="sync-badge" id="sync-badge"><div class="sync-dot"></div> <span id="sync-text">Live</span></div>
       <input type="file" id="import-file-input" accept=".xlsx,.csv" onchange="handleImportFile(event)" style="display:none" />
       <button class="ghost" onclick="document.getElementById('import-file-input').click()">⬆ Import</button>
       <button class="ghost" onclick="printAllQR()">🖨 Print All QR</button>
@@ -679,7 +757,7 @@
       <div class="user-chip" id="user-chip" style="display:none">
         <img id="user-avatar" src="" alt="" />
         <span id="user-name"></span>
-        <button class="ghost" style="padding:4px 8px;font-size:0.7rem" onclick="signOut()">Sign Out</button>
+        <button class="ghost" style="padding:4px 8px;font-size:0.7rem;white-space:nowrap" onclick="signOut()">Sign Out</button>
       </div>
     </div>
   </header>
@@ -1367,25 +1445,29 @@ window.onSearch = function() {
 window.handleImportFile = async function(event) {
   const file = event.target.files[0];
   if (!file) return;
-  event.target.value = ''; // reset so same file can be re-imported
+  event.target.value = '';
 
   const ext = file.name.split('.').pop().toLowerCase();
   let rows = [];
 
+  // ── Parse CSV ──────────────────────────────────────────────
+  const parseCSVLine = line => {
+    const result = []; let cur = ''; let inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') { if (inQ && line[i+1] === '"') { cur += '"'; i++; } else { inQ = !inQ; } }
+      else if (c === ',' && !inQ) { result.push(cur.trim()); cur = ''; }
+      else { cur += c; }
+    }
+    result.push(cur.trim());
+    return result;
+  };
+
   if (ext === 'csv') {
     const text = await file.text();
-    const lines = text.split(/\r?\n/).filter(l => l.trim());
-    const parseCSVLine = line => {
-      const result = []; let cur = ''; let inQ = false;
-      for (let i = 0; i < line.length; i++) {
-        const c = line[i];
-        if (c === '"') { if (inQ && line[i+1] === '"') { cur += '"'; i++; } else { inQ = !inQ; } }
-        else if (c === ',' && !inQ) { result.push(cur.trim()); cur = ''; }
-        else { cur += c; }
-      }
-      result.push(cur.trim());
-      return result;
-    };
+    const lines = text.split(/
+?
+/).filter(l => l.trim());
     const header = parseCSVLine(lines[0]).map(h => h.toLowerCase());
     rows = lines.slice(1).map(l => {
       const vals = parseCSVLine(l);
@@ -1394,7 +1476,6 @@ window.handleImportFile = async function(event) {
       return obj;
     });
   } else {
-    // xlsx — use SheetJS loaded from CDN
     const data = await file.arrayBuffer();
     const XLSX = window._XLSX;
     if (!XLSX) { alert('Excel import is loading, please try again in a second.'); return; }
@@ -1405,7 +1486,7 @@ window.handleImportFile = async function(event) {
 
   if (rows.length === 0) { alert('No data found in file.'); return; }
 
-  // Map columns flexibly
+  // ── Detect format ──────────────────────────────────────────
   function findCol(row, candidates) {
     const keys = Object.keys(row);
     for (const c of candidates) {
@@ -1416,12 +1497,75 @@ window.handleImportFile = async function(event) {
   }
 
   const sampleRow = rows[0];
+  const binCol   = findCol(sampleRow, ['bin']);
   const nameCol  = findCol(sampleRow, ['item','name','uniform','description','product']);
   const sizeCol  = findCol(sampleRow, ['size']);
   const qtyCol   = findCol(sampleRow, ['quantity','qty','count']);
-  const valCol   = findCol(sampleRow, ['estimatedprice','price','value','cost','unitprice']);
+  const valCol   = findCol(sampleRow, ['valueperitem','estimatedprice','price','value','cost','unitprice']);
   const notesCol = findCol(sampleRow, ['additionalinfo','notes','note','info','comments']);
+  const linkCol  = findCol(sampleRow, ['purchaselink','link','url']);
 
+  // ── MULTI-BIN FORMAT (has a "Bin" column — our own export format) ──────────
+  if (binCol && nameCol) {
+    // Group rows into bins, skipping totals and blank rows
+    const binMap = new Map(); // binName -> [items]
+    const binOrder = [];
+
+    rows.forEach(r => {
+      const binName = String(r[binCol] || '').trim();
+      const itemName = String(r[nameCol] || '').trim();
+
+      // Skip blank rows, total rows (bin name ends with — TOTAL), or rows with no item
+      if (!binName || !itemName) return;
+      if (binName.includes('— TOTAL') || binName.includes('- TOTAL')) return;
+
+      if (!binMap.has(binName)) {
+        binMap.set(binName, []);
+        binOrder.push(binName);
+      }
+
+      const rawVal = String(r[valCol] || '').replace(/[$,]/g, '');
+      const rawQty = String(r[qtyCol] || '1');
+      binMap.get(binName).push({
+        id:    uid(),
+        name:  itemName,
+        size:  sizeCol  ? String(r[sizeCol]  || '').trim() : '',
+        qty:   parseInt(rawQty) || 1,
+        value: parseFloat(rawVal) || 0,
+        notes: notesCol ? String(r[notesCol] || '').trim() : '',
+        link:  linkCol  ? String(r[linkCol]  || '').trim() : '',
+      });
+    });
+
+    if (binOrder.length === 0) { alert('No valid items found.'); return; }
+
+    const totalItems = [...binMap.values()].reduce((s, items) => s + items.length, 0);
+    const confirmed = window.confirm(
+      'Import ' + totalItems + ' items across ' + binOrder.length + ' bin' + (binOrder.length !== 1 ? 's' : '') + '?
+
+' +
+      binOrder.map(n => '• ' + n + ' (' + binMap.get(n).length + ' items)').join('
+')
+    );
+    if (!confirmed) return;
+
+    setSyncStatus('syncing');
+    const now = Date.now();
+    for (let i = 0; i < binOrder.length; i++) {
+      const name = binOrder[i];
+      const items = binMap.get(name);
+      const id = uid();
+      await setDoc(doc(collection(db,'bins'), id), {
+        name, items, createdAt: now + i,
+        ownerId: currentUser ? currentUser.uid : 'viewonly'
+      });
+    }
+    setSyncStatus('synced');
+    showMain();
+    return;
+  }
+
+  // ── SINGLE-BIN FORMAT (no Bin column — e.g. original Excel sheet) ─────────
   if (!nameCol) { alert('Could not find an item name column. Make sure your file has a column like "Item", "Name", or "Description".'); return; }
 
   const binName = file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
@@ -1431,13 +1575,13 @@ window.handleImportFile = async function(event) {
       const rawVal = String(r[valCol] || '').replace(/[$,]/g, '');
       const rawQty = String(r[qtyCol] || '1');
       return {
-        id: uid(),
+        id:    uid(),
         name:  String(r[nameCol] || '').trim(),
-        size:  sizeCol ? String(r[sizeCol] || '').trim() : '',
+        size:  sizeCol  ? String(r[sizeCol]  || '').trim() : '',
         qty:   parseInt(rawQty) || 1,
         value: parseFloat(rawVal) || 0,
         notes: notesCol ? String(r[notesCol] || '').trim() : '',
-        link:  ''
+        link:  linkCol  ? String(r[linkCol]  || '').trim() : '',
       };
     });
 
