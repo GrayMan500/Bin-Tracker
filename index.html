@@ -735,7 +735,7 @@
 
 <!-- LOADING OVERLAY -->
 <!-- LOADING OVERLAY -->
-<div id="loading-overlay" style="display:none">
+<div id="loading-overlay">
   <h1>BIN TRACKER</h1>
   <div class="spinner"></div>
   <div class="loading-msg">Connecting to database…</div>
@@ -1061,7 +1061,6 @@ onAuthStateChanged(auth, (user) => {
   } else if (!isViewOnly) {
     document.getElementById('loading-overlay').style.display = 'none';
     document.getElementById('auth-screen').style.display = 'flex';
-    setTimeout(() => document.getElementById('auth-screen').querySelector('.google-btn').focus(), 100);
   }
 });
 
@@ -1451,7 +1450,6 @@ window.handleImportFile = async function(event) {
   const ext = file.name.split('.').pop().toLowerCase();
   let rows = [];
 
-  // ── Parse CSV ──────────────────────────────────────────────
   const parseCSVLine = line => {
     const result = []; let cur = ''; let inQ = false;
     for (let i = 0; i < line.length; i++) {
@@ -1466,9 +1464,7 @@ window.handleImportFile = async function(event) {
 
   if (ext === 'csv') {
     const text = await file.text();
-    const lines = text.split(/
-?
-/).filter(l => l.trim());
+    const lines = text.split(/\r?\n/).filter(l => l.trim());
     const header = parseCSVLine(lines[0]).map(h => h.toLowerCase());
     rows = lines.slice(1).map(l => {
       const vals = parseCSVLine(l);
@@ -1487,7 +1483,6 @@ window.handleImportFile = async function(event) {
 
   if (rows.length === 0) { alert('No data found in file.'); return; }
 
-  // ── Detect format ──────────────────────────────────────────
   function findCol(row, candidates) {
     const keys = Object.keys(row);
     for (const c of candidates) {
@@ -1506,30 +1501,20 @@ window.handleImportFile = async function(event) {
   const notesCol = findCol(sampleRow, ['additionalinfo','notes','note','info','comments']);
   const linkCol  = findCol(sampleRow, ['purchaselink','link','url']);
 
-  // ── MULTI-BIN FORMAT (has a "Bin" column — our own export format) ──────────
+  // ── MULTI-BIN: our own export format has a "Bin" column ──────
   if (binCol && nameCol) {
-    // Group rows into bins, skipping totals and blank rows
-    const binMap = new Map(); // binName -> [items]
+    const binMap = new Map();
     const binOrder = [];
-
     rows.forEach(r => {
       const binName = String(r[binCol] || '').trim();
       const itemName = String(r[nameCol] || '').trim();
-
-      // Skip blank rows, total rows (bin name ends with — TOTAL), or rows with no item
       if (!binName || !itemName) return;
-      if (binName.includes('— TOTAL') || binName.includes('- TOTAL')) return;
-
-      if (!binMap.has(binName)) {
-        binMap.set(binName, []);
-        binOrder.push(binName);
-      }
-
+      if (binName.includes('TOTAL')) return;
+      if (!binMap.has(binName)) { binMap.set(binName, []); binOrder.push(binName); }
       const rawVal = String(r[valCol] || '').replace(/[$,]/g, '');
       const rawQty = String(r[qtyCol] || '1');
       binMap.get(binName).push({
-        id:    uid(),
-        name:  itemName,
+        id: uid(), name: itemName,
         size:  sizeCol  ? String(r[sizeCol]  || '').trim() : '',
         qty:   parseInt(rawQty) || 1,
         value: parseFloat(rawVal) || 0,
@@ -1537,27 +1522,20 @@ window.handleImportFile = async function(event) {
         link:  linkCol  ? String(r[linkCol]  || '').trim() : '',
       });
     });
-
     if (binOrder.length === 0) { alert('No valid items found.'); return; }
-
     const totalItems = [...binMap.values()].reduce((s, items) => s + items.length, 0);
     const confirmed = window.confirm(
-      'Import ' + totalItems + ' items across ' + binOrder.length + ' bin' + (binOrder.length !== 1 ? 's' : '') + '?
-
-' +
-      binOrder.map(n => '• ' + n + ' (' + binMap.get(n).length + ' items)').join('
-')
+      'Import ' + totalItems + ' items across ' + binOrder.length + ' bin' + (binOrder.length !== 1 ? 's' : '') + '?\n\n' +
+      binOrder.map(n => '\u2022 ' + n + ' (' + binMap.get(n).length + ' items)').join('\n')
     );
     if (!confirmed) return;
-
     setSyncStatus('syncing');
     const now = Date.now();
     for (let i = 0; i < binOrder.length; i++) {
       const name = binOrder[i];
-      const items = binMap.get(name);
       const id = uid();
       await setDoc(doc(collection(db,'bins'), id), {
-        name, items, createdAt: now + i,
+        name, items: binMap.get(name), createdAt: now + i,
         ownerId: currentUser ? currentUser.uid : 'viewonly'
       });
     }
@@ -1566,9 +1544,8 @@ window.handleImportFile = async function(event) {
     return;
   }
 
-  // ── SINGLE-BIN FORMAT (no Bin column — e.g. original Excel sheet) ─────────
-  if (!nameCol) { alert('Could not find an item name column. Make sure your file has a column like "Item", "Name", or "Description".'); return; }
-
+  // ── SINGLE-BIN: single sheet without a Bin column ────────────
+  if (!nameCol) { alert('Could not find an item name column.'); return; }
   const binName = file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
   const items = rows
     .filter(r => String(r[nameCol] || '').trim())
@@ -1576,8 +1553,7 @@ window.handleImportFile = async function(event) {
       const rawVal = String(r[valCol] || '').replace(/[$,]/g, '');
       const rawQty = String(r[qtyCol] || '1');
       return {
-        id:    uid(),
-        name:  String(r[nameCol] || '').trim(),
+        id: uid(), name: String(r[nameCol] || '').trim(),
         size:  sizeCol  ? String(r[sizeCol]  || '').trim() : '',
         qty:   parseInt(rawQty) || 1,
         value: parseFloat(rawVal) || 0,
@@ -1585,12 +1561,9 @@ window.handleImportFile = async function(event) {
         link:  linkCol  ? String(r[linkCol]  || '').trim() : '',
       };
     });
-
   if (items.length === 0) { alert('No valid items found.'); return; }
-
   const confirmed = window.confirm('Import ' + items.length + ' items into a new bin called "' + binName + '"?');
   if (!confirmed) return;
-
   setSyncStatus('syncing');
   const id = uid();
   await setDoc(doc(collection(db,'bins'), id), { name: binName, items, createdAt: Date.now(), ownerId: currentUser ? currentUser.uid : 'viewonly' });
@@ -1763,11 +1736,8 @@ document.getElementById('rename-input').addEventListener('keydown', e => {
 });
 
 // ─── INIT ─────────────────────────────────────────────────────
-// Show loading overlay immediately unless this is a QR scan
-if (!window.location.hash.startsWith('#bin=')) {
-  document.getElementById('loading-overlay').style.display = 'flex';
-}
-showView('main-view');
+// Real-time listener handles initial load — show loading overlay until first snapshot
+showView('main-view'); // set a base, overlay covers it
 </script>
 </body>
 </html>
