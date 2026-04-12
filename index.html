@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bin Tracker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #242424;
+    --border: #2e2e2e;
+    --accent: #f0c040;
+    --text: #f0ede8;
+    --muted: #888;
+    --danger: #e05050;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+  }
+
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ── LOADING OVERLAY ── */
+  #loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    z-index: 999;
+  }
+  #loading-overlay h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3rem;
+    color: var(--accent);
+    letter-spacing: 0.06em;
+  }
+  .spinner {
+    width: 32px; height: 32px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-msg { font-size: 0.75rem; color: var(--muted); letter-spacing: 0.1em; }
+
+  /* ── HEADER ── */
+  header {
+    padding: 24px 24px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  header h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3rem;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    line-height: 1;
+  }
+  header .subtitle {
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    flex: 1;
+  }
+
+  /* ── BUTTONS ── */
+  button {
+    background: var(--accent);
+    color: #0f0f0f;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 16px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: background 0.15s, transform 0.1s;
+    white-space: nowrap;
+  }
+  button:hover { background: #f5d060; }
+  button:active { transform: scale(0.97); }
+  button.danger { background: var(--danger); color: #fff; }
+  button.danger:hover { background: #f06060; }
+  button.ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  button.ghost:hover { border-color: var(--accent); color: var(--accent); background: transparent; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* ── INPUTS ── */
+  input, select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.15s;
+    width: 100%;
+  }
+  input:focus, select:focus { border-color: var(--accent); }
+  input::placeholder { color: var(--muted); }
+  select option { background: var(--surface); color: var(--text); }
+
+  .field-group { display: flex; flex-direction: column; gap: 4px; }
+  .field-label { font-size: 0.65rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
+
+  /* ── SYNC STATUS ── */
+  .sync-badge {
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    padding: 3px 8px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+  }
+  .sync-badge.syncing { color: var(--accent); border-color: var(--accent); }
+  .sync-badge.synced  { color: #5c5; border-color: #5c5; }
+  .sync-badge.error   { color: var(--danger); border-color: var(--danger); }
+  .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .sync-dot.pulse { animation: pulse 1s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* ── SEARCH ── */
+  .search-bar {
+    display: flex;
+    gap: 8px;
+    padding: 0 24px 16px;
+    align-items: center;
+  }
+  .search-bar input { flex: 1; }
+  .search-count { font-size: 0.7rem; color: var(--muted); white-space: nowrap; letter-spacing: 0.05em; }
+
+  .search-results {
+    padding: 0 24px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .search-result-row {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 4px 16px;
+    align-items: center;
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.12s;
+  }
+  .search-result-row:hover { border-color: var(--accent); transform: translateX(3px); }
+  .search-result-name { font-size: 0.88rem; color: var(--text); }
+  .search-result-name mark { background: none; color: var(--accent); font-weight: 600; }
+  .search-result-meta { font-size: 0.72rem; color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; }
+  .search-result-bin { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; color: var(--accent); letter-spacing: 0.05em; text-align: right; white-space: nowrap; }
+  .search-result-val { font-size: 0.72rem; color: var(--muted); text-align: right; }
+  .search-empty { text-align: center; padding: 32px; color: var(--muted); font-size: 0.82rem; }
+
+  /* ── MAIN VIEW ── */
+  .add-bin-bar {
+    display: flex;
+    gap: 8px;
+    padding: 20px 24px;
+  }
+  .add-bin-bar input { flex: 1; }
+
+  .bins-grid {
+    padding: 0 24px 40px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+
+  .bin-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.15s;
+  }
+  .bin-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+
+  .bin-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .bin-card-top .bin-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.5rem;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+  }
+  .bin-card-top .bin-count { font-size: 0.7rem; color: var(--muted); letter-spacing: 0.08em; }
+
+  .bin-card-body { padding: 12px 16px; min-height: 52px; }
+  .bin-preview-item {
+    font-size: 0.75rem;
+    color: var(--muted);
+    padding: 2px 0;
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .bin-preview-item .item-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .bin-card-footer {
+    padding: 10px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--surface2);
+    gap: 8px;
+  }
+  .bin-total { font-size: 0.75rem; letter-spacing: 0.05em; flex: 1; }
+  .bin-total strong { color: var(--accent); }
+  .bin-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .bin-actions button { padding: 5px 10px; font-size: 0.7rem; }
+
+  /* ── DETAIL VIEW ── */
+  .detail-header {
+    padding: 20px 24px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .detail-header h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.5rem;
+    color: var(--accent);
+    letter-spacing: 0.06em;
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .detail-body { padding: 20px 24px; }
+
+  /* ── ADD ITEM FORM ── */
+  .add-item-form {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 24px;
+  }
+  .add-item-form-title { font-size: 0.65rem; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 12px; }
+  .add-item-grid {
+    display: grid;
+    grid-template-columns: 2fr 70px 90px;
+    gap: 8px;
+    align-items: end;
+    margin-bottom: 8px;
+  }
+  .add-item-grid-row2 {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    align-items: end;
+    margin-bottom: 8px;
+  }
+  .size-toggle-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .size-toggle-wrap label {
+    font-size: 0.72rem;
+    color: var(--muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    user-select: none;
+  }
+  .size-toggle-wrap input[type=checkbox] { width: auto; accent-color: var(--accent); cursor: pointer; }
+  #new-item-size { max-width: 180px; display: none; }
+
+  /* ── ITEMS TABLE ── */
+  .table-wrap { overflow-x: auto; margin-bottom: 0; }
+  .items-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    min-width: 520px;
+  }
+  .items-table th {
+    text-align: left;
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .items-table td { padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .items-table tr:last-child td { border-bottom: none; }
+  .val-cell { color: var(--accent); white-space: nowrap; }
+  .link-cell a { color: var(--accent); text-decoration: none; font-size: 0.75rem; }
+  .link-cell a:hover { text-decoration: underline; }
+  .size-badge {
+    display: inline-block;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 6px;
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+  .del-btn {
+    background: none !important;
+    border: none !important;
+    color: var(--muted) !important;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 2px 6px;
+    border-radius: 3px;
+    transition: color 0.15s !important;
+  }
+  .del-btn:hover { color: var(--danger) !important; background: none !important; transform: none !important; }
+
+  .total-row {
+    display: flex;
+    justify-content: flex-end;
+    font-size: 0.85rem;
+    padding: 8px 10px;
+    border-top: 2px solid var(--accent);
+    margin-bottom: 24px;
+  }
+  .total-row strong { color: var(--accent); margin-left: 8px; }
+
+  /* ── QR SECTION ── */
+  .qr-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .qr-title { font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+  #qr-code canvas, #qr-code img { border-radius: 4px; }
+  .qr-hint { font-size: 0.7rem; color: var(--muted); text-align: center; max-width: 280px; line-height: 1.5; }
+  .qr-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+    width: 340px;
+    max-width: 90vw;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .modal h3 { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; color: var(--accent); letter-spacing: 0.06em; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+
+  /* ── SCAN VIEW ── */
+  #scan-view { padding: 24px; max-width: 480px; margin: 0 auto; }
+  #scan-view h2 { font-family: 'Bebas Neue', sans-serif; font-size: 2.8rem; color: var(--accent); margin-bottom: 4px; letter-spacing: 0.05em; }
+  .scan-meta { font-size: 0.7rem; color: var(--muted); margin-bottom: 20px; letter-spacing: 0.08em; }
+  .scan-item {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.88rem;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2px 12px;
+    align-items: start;
+  }
+  .scan-item .name { color: var(--text); font-weight: 500; }
+  .scan-item .meta { font-size: 0.72rem; color: var(--muted); grid-column: 1; }
+  .scan-item .val { color: var(--accent); font-weight: 500; grid-row: 1; grid-column: 2; padding-top: 1px; }
+  .scan-total {
+    display: flex;
+    justify-content: space-between;
+    padding: 14px 0 0;
+    font-size: 0.88rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    border-top: 2px solid var(--accent);
+    margin-top: 4px;
+  }
+  .scan-total strong { color: var(--accent); font-size: 1rem; }
+
+  .empty-state { text-align: center; padding: 48px 24px; color: var(--muted); }
+  .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+  .empty-state p { font-size: 0.82rem; line-height: 1.6; }
+
+  @media (max-width: 600px) {
+    .add-item-grid { grid-template-columns: 1fr 1fr; }
+    .bins-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOADING OVERLAY -->
+<div id="loading-overlay">
+  <h1>BIN TRACKER</h1>
+  <div class="spinner"></div>
+  <div class="loading-msg">Connecting to database…</div>
+</div>
+
+<!-- ═══ MAIN VIEW ═══ -->
+<div id="main-view" class="view">
+  <header>
+    <h1>BIN TRACKER</h1>
+    <span class="subtitle">moving inventory</span>
+    <div class="sync-badge" id="sync-badge"><div class="sync-dot"></div> <span id="sync-text">Live</span></div>
+    <button class="ghost" onclick="exportCSV()">⬇ Export CSV</button>
+  </header>
+  <div class="search-bar">
+    <input type="text" id="search-input" placeholder="🔍  Search items across all bins…" oninput="onSearch()" />
+    <span class="search-count" id="search-count"></span>
+  </div>
+  <div class="add-bin-bar">
+    <input type="text" id="new-bin-name" placeholder="New bin name (e.g. Kitchen, Books, Clothes…)" />
+    <button onclick="addBin()">+ Add Bin</button>
+  </div>
+  <div class="search-results" id="search-results" style="display:none"></div>
+  <div class="bins-grid" id="bins-grid"></div>
+</div>
+
+<!-- ═══ DETAIL VIEW ═══ -->
+<div id="detail-view" class="view">
+  <div class="detail-header">
+    <button class="ghost" onclick="showMain()">← Back</button>
+    <h2 id="detail-bin-name"></h2>
+    <button class="ghost" onclick="openRenameModal()">✏ Rename</button>
+  </div>
+  <div class="detail-body">
+    <div class="add-item-form">
+      <div class="add-item-form-title">Add Item</div>
+      <div class="add-item-grid">
+        <div class="field-group">
+          <span class="field-label">Item name</span>
+          <input type="text" id="new-item-name" placeholder="e.g. Cast iron skillet" />
+        </div>
+        <div class="field-group">
+          <span class="field-label">Qty</span>
+          <input type="number" id="new-item-qty" value="1" min="1" step="1" />
+        </div>
+        <div class="field-group">
+          <span class="field-label">Value per item ($)</span>
+          <input type="number" id="new-item-value" placeholder="0.00" min="0" step="0.01" />
+        </div>
+      </div>
+      <div class="add-item-grid-row2">
+        <div class="field-group">
+          <span class="field-label">Purchase link (optional)</span>
+          <input type="url" id="new-item-link" placeholder="https://…" />
+        </div>
+      </div>
+      <div class="size-toggle-wrap">
+        <label>
+          <input type="checkbox" id="size-toggle" onchange="toggleSizeField()" />
+          This item has a size
+        </label>
+        <input type="text" id="new-item-size" placeholder="e.g. L, 32×32, 10W…" />
+      </div>
+      <button onclick="addItem()">+ Add Item</button>
+    </div>
+
+    <div class="table-wrap">
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Qty</th>
+            <th>Size</th>
+            <th>Purchase Link</th>
+            <th>Line Total</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="items-tbody"></tbody>
+      </table>
+    </div>
+    <div class="total-row">Estimated Total: <strong id="detail-total">$0.00</strong></div>
+
+    <div class="qr-section">
+      <div class="qr-title">📦 QR Code for this bin</div>
+      <div id="qr-code"></div>
+      <p class="qr-hint">Scan with any phone camera to see the bin's full contents. Print and tape it to the box!</p>
+      <div class="qr-actions">
+        <button onclick="printQR()">🖨 Print QR</button>
+        <button class="ghost" onclick="downloadQR()">⬇ Save Image</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SCAN VIEW ═══ -->
+<div id="scan-view" class="view">
+  <h2 id="scan-bin-name">Loading…</h2>
+  <div class="scan-meta" id="scan-meta"></div>
+  <div id="scan-items"></div>
+  <div class="scan-total">
+    <span>Estimated Total</span>
+    <strong id="scan-total">$0.00</strong>
+  </div>
+</div>
+
+<!-- ═══ RENAME MODAL ═══ -->
+<div class="modal-overlay" id="rename-modal" onclick="if(event.target===this)closeRenameModal()">
+  <div class="modal">
+    <h3>Rename Bin</h3>
+    <div class="field-group">
+      <span class="field-label">New name</span>
+      <input type="text" id="rename-input" placeholder="Bin name…" />
+    </div>
+    <div class="modal-actions">
+      <button class="ghost" onclick="closeRenameModal()">Cancel</button>
+      <button onclick="confirmRename()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
+import { getFirestore, collection, doc, onSnapshot, setDoc, deleteDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+
+// ─── FIREBASE CONFIG ──────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyCF5UzdC-CM_ltrlgYL-SB_XaFWYqc5GaE",
+  authDomain: "bin-tracker-e81b6.firebaseapp.com",
+  databaseURL: "https://bin-tracker-e81b6-default-rtdb.firebaseio.com",
+  projectId: "bin-tracker-e81b6",
+  storageBucket: "bin-tracker-e81b6.firebasestorage.app",
+  messagingSenderId: "125289023200",
+  appId: "1:125289023200:web:33eb2b94e200595e2e7285"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+const binsCol = collection(db, 'bins');
+
+// ─── STATE ────────────────────────────────────────────────────
+let bins = [];
+let activeBinId = null;
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+// ─── SYNC STATUS ──────────────────────────────────────────────
+function setSyncStatus(state) {
+  const badge = document.getElementById('sync-badge');
+  const dot   = badge.querySelector('.sync-dot');
+  const text  = document.getElementById('sync-text');
+  badge.className = 'sync-badge ' + state;
+  dot.className   = 'sync-dot' + (state === 'syncing' ? ' pulse' : '');
+  text.textContent = state === 'syncing' ? 'Syncing…' : state === 'synced' ? 'Saved' : 'Offline';
+}
+
+// ─── REAL-TIME LISTENER ───────────────────────────────────────
+onSnapshot(binsCol, (snapshot) => {
+  bins = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+  bins.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+
+  document.getElementById('loading-overlay').style.display = 'none';
+
+  const hash = window.location.hash;
+  if (hash.startsWith('#bin=')) {
+    renderScanView(decodeURIComponent(hash.slice(5)));
+    showView('scan-view');
+  } else {
+    if (document.getElementById('detail-view').classList.contains('active') && activeBinId) {
+      renderItems();
+    } else {
+      renderBins();
+      if (!document.querySelector('.view.active')) showView('main-view');
+    }
+    onSearch();
+  }
+}, (err) => {
+  console.error(err);
+  setSyncStatus('error');
+  document.getElementById('loading-overlay').style.display = 'none';
+  showView('main-view');
+});
+
+// ─── ROUTING ──────────────────────────────────────────────────
+window.showView = function(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+window.showMain = function() {
+  activeBinId = null;
+  document.getElementById('search-input').value = '';
+  onSearch();
+  renderBins();
+  showView('main-view');
+}
+
+window.showDetail = function(binId) {
+  activeBinId = binId;
+  const bin = bins.find(b => b.id === binId);
+  if (!bin) return;
+  document.getElementById('detail-bin-name').textContent = bin.name;
+  ['new-item-name','new-item-link','new-item-size'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('new-item-qty').value = '1';
+  document.getElementById('new-item-value').value = '';
+  document.getElementById('size-toggle').checked = false;
+  document.getElementById('new-item-size').style.display = 'none';
+  renderItems();
+  renderQR();
+  showView('detail-view');
+}
+
+// ─── SCAN VIEW ────────────────────────────────────────────────
+function renderScanView(binId) {
+  const bin = bins.find(b => b.id === binId);
+  if (!bin) {
+    document.getElementById('scan-bin-name').textContent = 'Bin not found';
+    document.getElementById('scan-meta').textContent = 'This bin may have been deleted.';
+    return;
+  }
+  document.getElementById('scan-bin-name').textContent = '📦 ' + bin.name;
+  document.getElementById('scan-meta').textContent = (bin.items||[]).length + ' item' + ((bin.items||[]).length !== 1 ? 's' : '');
+  const cont = document.getElementById('scan-items');
+  cont.innerHTML = '';
+  let total = 0;
+  (bin.items || []).forEach(item => {
+    const qty = item.qty || 1;
+    const lineVal = (item.value || 0) * qty;
+    total += lineVal;
+    const metaParts = [];
+    if (qty > 1) metaParts.push('Qty: ' + qty);
+    if (item.size) metaParts.push('Size: ' + item.size);
+    if (item.link) metaParts.push('<a href="' + esc(item.link) + '" target="_blank" rel="noopener" style="color:var(--accent)">View listing ↗</a>');
+    const d = document.createElement('div');
+    d.className = 'scan-item';
+    d.innerHTML = '<span class="name">' + esc(item.name) + '</span><span class="val">$' + lineVal.toFixed(2) + '</span>' +
+      (metaParts.length ? '<span class="meta">' + metaParts.join(' · ') + '</span>' : '');
+    cont.appendChild(d);
+  });
+  if (!bin.items || bin.items.length === 0) {
+    cont.innerHTML = '<p style="color:var(--muted);font-size:0.8rem;padding:16px 0;">No items added yet.</p>';
+  }
+  document.getElementById('scan-total').textContent = '$' + total.toFixed(2);
+}
+
+// ─── BINS ─────────────────────────────────────────────────────
+window.addBin = async function() {
+  const inp = document.getElementById('new-bin-name');
+  const name = inp.value.trim();
+  if (!name) return;
+  setSyncStatus('syncing');
+  const id = uid();
+  await setDoc(doc(binsCol, id), { name, items: [], createdAt: Date.now() });
+  setSyncStatus('synced');
+  inp.value = '';
+}
+
+window.deleteBin = async function(binId) {
+  const bin = bins.find(b => b.id === binId);
+  if (!confirm('Delete bin "' + (bin?.name) + '"? This cannot be undone.')) return;
+  setSyncStatus('syncing');
+  await deleteDoc(doc(binsCol, binId));
+  setSyncStatus('synced');
+}
+
+window.openRenameModal = function() {
+  const bin = bins.find(b => b.id === activeBinId);
+  if (!bin) return;
+  document.getElementById('rename-input').value = bin.name;
+  document.getElementById('rename-modal').classList.add('open');
+  setTimeout(() => document.getElementById('rename-input').select(), 50);
+}
+window.closeRenameModal = function() { document.getElementById('rename-modal').classList.remove('open'); }
+window.confirmRename = async function() {
+  const newName = document.getElementById('rename-input').value.trim();
+  if (!newName) return;
+  setSyncStatus('syncing');
+  await updateDoc(doc(binsCol, activeBinId), { name: newName });
+  setSyncStatus('synced');
+  document.getElementById('detail-bin-name').textContent = newName;
+  closeRenameModal();
+}
+
+function renderBins() {
+  const grid = document.getElementById('bins-grid');
+  if (bins.length === 0) {
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="icon">📦</div><p>No bins yet.<br>Add your first one above to get started.</p></div>';
+    return;
+  }
+  grid.innerHTML = bins.map(bin => {
+    const items = bin.items || [];
+    const total = items.reduce((s, i) => s + (i.value || 0) * (i.qty || 1), 0);
+    const preview = items.slice(0, 3).map(i => {
+      const lineVal = (i.value || 0) * (i.qty || 1);
+      return '<div class="bin-preview-item"><span class="item-name">' + esc(i.name) + (i.qty > 1 ? ' ×' + i.qty : '') + '</span><span>$' + lineVal.toFixed(2) + '</span></div>';
+    }).join('');
+    const more = items.length > 3 ? '<div class="bin-preview-item"><span style="color:var(--muted)">+' + (items.length - 3) + ' more…</span></div>' : '';
+    return '<div class="bin-card" onclick="showDetail(\'' + bin.id + '\')">' +
+      '<div class="bin-card-top"><span class="bin-label">' + esc(bin.name) + '</span><span class="bin-count">' + items.length + ' item' + (items.length !== 1 ? 's' : '') + '</span></div>' +
+      '<div class="bin-card-body">' + preview + more + '</div>' +
+      '<div class="bin-card-footer">' +
+        '<div class="bin-total">Total: <strong>$' + total.toFixed(2) + '</strong></div>' +
+        '<div class="bin-actions"><button class="danger" onclick="event.stopPropagation();deleteBin(\'' + bin.id + '\')">✕ Delete</button></div>' +
+      '</div></div>';
+  }).join('');
+}
+
+// ─── SIZE TOGGLE ──────────────────────────────────────────────
+window.toggleSizeField = function() {
+  const show = document.getElementById('size-toggle').checked;
+  const sizeInp = document.getElementById('new-item-size');
+  sizeInp.style.display = show ? 'block' : 'none';
+  if (show) sizeInp.focus();
+  else sizeInp.value = '';
+}
+
+// ─── ITEMS ────────────────────────────────────────────────────
+window.addItem = async function() {
+  const nameInp = document.getElementById('new-item-name');
+  const qtyInp  = document.getElementById('new-item-qty');
+  const valInp  = document.getElementById('new-item-value');
+  const linkInp = document.getElementById('new-item-link');
+  const sizeInp = document.getElementById('new-item-size');
+  const hasSize = document.getElementById('size-toggle').checked;
+
+  const name  = nameInp.value.trim();
+  const qty   = Math.max(1, parseInt(qtyInp.value) || 1);
+  const value = parseFloat(valInp.value) || 0;
+  const link  = linkInp.value.trim();
+  const size  = hasSize ? sizeInp.value.trim() : '';
+
+  if (!name) { nameInp.focus(); return; }
+
+  const bin = bins.find(b => b.id === activeBinId);
+  if (!bin) return;
+
+  const newItem = { id: uid(), name, qty, value, link, size };
+  const updatedItems = [...(bin.items || []), newItem];
+
+  setSyncStatus('syncing');
+  await updateDoc(doc(binsCol, activeBinId), { items: updatedItems });
+  setSyncStatus('synced');
+
+  nameInp.value = ''; qtyInp.value = '1'; valInp.value = ''; linkInp.value = ''; sizeInp.value = '';
+  document.getElementById('size-toggle').checked = false;
+  sizeInp.style.display = 'none';
+  nameInp.focus();
+}
+
+window.deleteItem = async function(itemId) {
+  const bin = bins.find(b => b.id === activeBinId);
+  if (!bin) return;
+  const updatedItems = (bin.items || []).filter(i => i.id !== itemId);
+  setSyncStatus('syncing');
+  await updateDoc(doc(binsCol, activeBinId), { items: updatedItems });
+  setSyncStatus('synced');
+}
+
+function renderItems() {
+  const bin = bins.find(b => b.id === activeBinId);
+  const tbody = document.getElementById('items-tbody');
+  if (!bin || !bin.items || bin.items.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted);padding:20px 10px;font-size:0.8rem;">No items yet. Add one above!</td></tr>';
+    document.getElementById('detail-total').textContent = '$0.00';
+    return;
+  }
+  tbody.innerHTML = bin.items.map(item => {
+    const qty = item.qty || 1;
+    const lineVal = (item.value || 0) * qty;
+    const linkCell = item.link ? '<a href="' + esc(item.link) + '" target="_blank" rel="noopener">↗ Link</a>' : '<span style="color:var(--border)">—</span>';
+    const sizeCell = item.size ? '<span class="size-badge">' + esc(item.size) + '</span>' : '<span style="color:var(--border)">—</span>';
+    return '<tr><td>' + esc(item.name) + '</td><td>' + qty + '</td><td>' + sizeCell + '</td><td class="link-cell">' + linkCell + '</td><td class="val-cell">$' + lineVal.toFixed(2) + '</td><td><button class="del-btn" onclick="deleteItem(\'' + item.id + '\')">✕</button></td></tr>';
+  }).join('');
+  const total = bin.items.reduce((s, i) => s + (i.value || 0) * (i.qty || 1), 0);
+  document.getElementById('detail-total').textContent = '$' + total.toFixed(2);
+}
+
+// ─── QR CODE ──────────────────────────────────────────────────
+function getBinURL(binId) {
+  return window.location.href.split('#')[0] + '#bin=' + encodeURIComponent(binId);
+}
+
+function renderQR() {
+  const container = document.getElementById('qr-code');
+  container.innerHTML = '';
+  if (!activeBinId) return;
+  new QRCode(container, {
+    text: getBinURL(activeBinId),
+    width: 200, height: 200,
+    colorDark: '#f0ede8',
+    colorLight: '#1a1a1a',
+    correctLevel: QRCode.CorrectLevel.M
+  });
+}
+
+window.printQR = function() {
+  const bin = bins.find(b => b.id === activeBinId);
+  if (!bin) return;
+  const canvas = document.querySelector('#qr-code canvas');
+  if (!canvas) return;
+  const total = (bin.items||[]).reduce((s, i) => s + (i.value || 0) * (i.qty || 1), 0);
+  const rows = (bin.items||[]).map(i => {
+    const qty = i.qty || 1;
+    const parts = [i.name];
+    if (qty > 1) parts.push('×' + qty);
+    if (i.size) parts.push('[' + i.size + ']');
+    return '<li>' + parts.join(' ') + ' — $' + ((i.value||0)*qty).toFixed(2) + (i.link ? ' <a href="' + i.link + '">' + i.link + '</a>' : '') + '</li>';
+  }).join('');
+  const win = window.open('', '_blank');
+  win.document.write('<html><head><title>Bin: ' + bin.name + '</title><style>body{font-family:monospace;padding:24px;color:#111}h2{font-size:2rem;margin-bottom:4px}ul{margin:12px 0;padding-left:20px;line-height:1.9}li{font-size:.95rem}.total{font-weight:bold;border-top:2px solid #111;padding-top:8px;margin-top:8px}img{display:block;margin:16px 0}a{color:#333}</style></head><body><h2>📦 ' + bin.name + '</h2><img src="' + canvas.toDataURL() + '" width="180" /><ul>' + rows + '</ul><div class="total">Estimated Total: $' + total.toFixed(2) + '</div><script>window.onload=()=>window.print()<\/script></body></html>');
+  win.document.close();
+}
+
+window.downloadQR = function() {
+  const canvas = document.querySelector('#qr-code canvas');
+  if (!canvas) return;
+  const bin = bins.find(b => b.id === activeBinId);
+  const a = document.createElement('a');
+  a.download = 'bin-' + (bin?.name||'qr').replace(/\s+/g,'-').toLowerCase() + '-qr.png';
+  a.href = canvas.toDataURL();
+  a.click();
+}
+
+// ─── SEARCH ───────────────────────────────────────────────────
+window.onSearch = function() {
+  const q = document.getElementById('search-input').value.trim().toLowerCase();
+  const resultsEl = document.getElementById('search-results');
+  const gridEl    = document.getElementById('bins-grid');
+  const countEl   = document.getElementById('search-count');
+  if (!q) {
+    resultsEl.style.display = 'none';
+    gridEl.style.display = '';
+    countEl.textContent = '';
+    return;
+  }
+  const hits = [];
+  bins.forEach(bin => {
+    (bin.items||[]).forEach(item => {
+      if (item.name.toLowerCase().includes(q)) hits.push({ bin, item });
+    });
+  });
+  gridEl.style.display = 'none';
+  countEl.textContent = hits.length + ' result' + (hits.length !== 1 ? 's' : '');
+  if (hits.length === 0) {
+    resultsEl.style.display = 'block';
+    resultsEl.innerHTML = '<div class="search-empty">No items matching "<strong>' + esc(q) + '</strong>" found.</div>';
+    return;
+  }
+  resultsEl.style.display = 'flex';
+  function highlight(text, q) {
+    const idx = text.toLowerCase().indexOf(q);
+    if (idx === -1) return esc(text);
+    return esc(text.slice(0, idx)) + '<mark>' + esc(text.slice(idx, idx + q.length)) + '</mark>' + esc(text.slice(idx + q.length));
+  }
+  resultsEl.innerHTML = hits.map(({ bin, item }) => {
+    const qty = item.qty || 1;
+    const lineVal = (item.value || 0) * qty;
+    const metaParts = [];
+    if (qty > 1) metaParts.push('Qty: ' + qty);
+    if (item.size) metaParts.push('Size: ' + item.size);
+    if (item.link) metaParts.push('<a href="' + esc(item.link) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:var(--accent)">↗ Link</a>');
+    return '<div class="search-result-row" onclick="showDetail(\'' + bin.id + '\')">' +
+      '<div><div class="search-result-name">' + highlight(item.name, q) + '</div>' +
+      (metaParts.length ? '<div class="search-result-meta">' + metaParts.join(' · ') + '</div>' : '') + '</div>' +
+      '<div><div class="search-result-bin">📦 ' + esc(bin.name) + '</div><div class="search-result-val">$' + lineVal.toFixed(2) + '</div></div>' +
+      '</div>';
+  }).join('');
+}
+
+// ─── CSV EXPORT ───────────────────────────────────────────────
+window.exportCSV = function() {
+  if (bins.length === 0) { alert('No bins to export yet!'); return; }
+  const rows = [['Bin', 'Item', 'Qty', 'Size', 'Value Per Item ($)', 'Line Total ($)', 'Purchase Link']];
+  bins.forEach(bin => {
+    if (!bin.items || bin.items.length === 0) {
+      rows.push([bin.name, '(empty)', '', '', '', '0.00', '']);
+    } else {
+      bin.items.forEach(item => {
+        const qty = item.qty || 1;
+        rows.push([bin.name, item.name, qty, item.size||'', (item.value||0).toFixed(2), ((item.value||0)*qty).toFixed(2), item.link||'']);
+      });
+      const total = bin.items.reduce((s, i) => s + (i.value||0)*(i.qty||1), 0);
+      rows.push([bin.name + ' — TOTAL', '', '', '', '', total.toFixed(2), '']);
+      rows.push(['','','','','','','']);
+    }
+  });
+  const csv = rows.map(r => r.map(cell => '"' + String(cell).replace(/"/g,'""') + '"').join(',')).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'bin-inventory.csv';
+  a.click();
+}
+
+// ─── UTILS ────────────────────────────────────────────────────
+window.esc = function(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function esc(str) { return window.esc(str); }
+
+// ─── KEYBOARD SHORTCUTS ───────────────────────────────────────
+document.getElementById('new-bin-name').addEventListener('keydown', e => { if (e.key === 'Enter') addBin(); });
+document.getElementById('search-input').addEventListener('keydown', e => { if (e.key === 'Escape') { e.target.value = ''; onSearch(); } });
+document.getElementById('rename-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') confirmRename();
+  if (e.key === 'Escape') closeRenameModal();
+});
+
+// ─── INIT ─────────────────────────────────────────────────────
+// Real-time listener handles initial load — show loading overlay until first snapshot
+showView('main-view'); // set a base, overlay covers it
+</script>
+</body>
+</html>
