@@ -735,7 +735,7 @@
 
 <!-- LOADING OVERLAY -->
 <!-- LOADING OVERLAY -->
-<div id="loading-overlay">
+<div id="loading-overlay" style="display:none">
   <h1>BIN TRACKER</h1>
   <div class="spinner"></div>
   <div class="loading-msg">Connecting to database…</div>
@@ -1061,6 +1061,7 @@ onAuthStateChanged(auth, (user) => {
   } else if (!isViewOnly) {
     document.getElementById('loading-overlay').style.display = 'none';
     document.getElementById('auth-screen').style.display = 'flex';
+    setTimeout(() => document.getElementById('auth-screen').querySelector('.google-btn').focus(), 100);
   }
 });
 
@@ -1762,8 +1763,11 @@ document.getElementById('rename-input').addEventListener('keydown', e => {
 });
 
 // ─── INIT ─────────────────────────────────────────────────────
-// Real-time listener handles initial load — show loading overlay until first snapshot
-showView('main-view'); // set a base, overlay covers it
+// Show loading overlay immediately unless this is a QR scan
+if (!window.location.hash.startsWith('#bin=')) {
+  document.getElementById('loading-overlay').style.display = 'flex';
+}
+showView('main-view');
 </script>
 </body>
 </html>
