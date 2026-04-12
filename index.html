@@ -197,6 +197,34 @@
     flex-wrap: wrap;
   }
 
+
+  /* ── BUTTONS ── */
+  button {
+    background: var(--accent);
+    color: #0f0f0f;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 16px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: background 0.15s, transform 0.1s;
+    white-space: nowrap;
+  }
+  button:hover { background: #f5d060; }
+  button:active { transform: scale(0.97); }
+  button.danger { background: var(--danger); color: #fff; }
+  button.danger:hover { background: #f06060; }
+  button.ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  button.ghost:hover { border-color: var(--accent); color: var(--accent); background: transparent; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
   /* ── SYNC STATUS ── */
   /* ── HEADER ── */
   header {
@@ -235,6 +263,34 @@
     flex-shrink: 0;
     flex-wrap: wrap;
   }
+
+
+  /* ── BUTTONS ── */
+  button {
+    background: var(--accent);
+    color: #0f0f0f;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 16px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: background 0.15s, transform 0.1s;
+    white-space: nowrap;
+  }
+  button:hover { background: #f5d060; }
+  button:active { transform: scale(0.97); }
+  button.danger { background: var(--danger); color: #fff; }
+  button.danger:hover { background: #f06060; }
+  button.ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  button.ghost:hover { border-color: var(--accent); color: var(--accent); background: transparent; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
   /* ── SYNC STATUS ── */
   .sync-badge {
