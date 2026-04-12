@@ -841,12 +841,17 @@
   .trash-item-meta { font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
   .trash-empty { text-align: center; padding: 32px; color: var(--muted); font-size: 0.82rem; }
   /* ── QR SIZE ── */
-  .size-option { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; transition: border-color 0.15s; }
+  .size-option {
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 14px; border: 1px solid var(--border);
+    border-radius: 6px; cursor: pointer; transition: border-color 0.15s, background 0.15s;
+  }
   .size-option:hover { border-color: var(--accent); }
-  .size-option.selected { border-color: var(--accent); background: rgba(240,192,64,0.08); }
-  .size-option input[type=radio] { accent-color: var(--accent); }
-  .size-option-label { font-size: 0.82rem; }
-  .size-option-sub { font-size: 0.68rem; color: var(--muted); }
+  .size-option.selected { border-color: var(--accent); background: rgba(240,192,64,0.06); }
+  .size-option input[type=radio] { accent-color: var(--accent); flex-shrink: 0; width: 16px; height: 16px; margin: 0; }
+  .size-option-label { font-size: 0.88rem; font-weight: 500; color: var(--text); }
+  .size-option-dim { font-size: 0.75rem; color: var(--muted); }
+  .size-option-count { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
   /* ── BIN NUMBER ── */
   .bin-number { font-family: 'Bebas Neue', sans-serif; font-size: 0.85rem; color: #0f0f0f; background: var(--accent); border-radius: 3px; padding: 1px 7px; letter-spacing: 0.05em; flex-shrink: 0; }
   .detail-bin-number { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; color: var(--muted); letter-spacing: 0.05em; align-self: flex-end; padding-bottom: 6px; }
@@ -1977,38 +1982,38 @@ showView('main-view'); // set a base, overlay covers it
 
 <!-- ═══ QR SIZE MODAL ═══ -->
 <div class="modal-overlay" id="qr-size-modal" onclick="if(event.target===this)closeQRSizeModal()">
-  <div class="modal" style="width:400px">
+  <div class="modal" style="width:380px">
     <h3>QR Label Size</h3>
-    <p style="font-size:0.75rem;color:var(--muted);line-height:1.6;margin-bottom:12px">Select how large each label should print. Counts assume standard 8.5"×11" paper with margins.</p>
+    <p style="font-size:0.75rem;color:var(--muted);line-height:1.6;margin-bottom:14px">Choose a size for your printed labels. Estimates based on 8.5"×11" paper.</p>
     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
       <label class="size-option selected">
         <input type="radio" name="qr-size" value="80" checked onchange="selectQRSize(this)" />
-        <div style="flex:1">
-          <div style="display:flex;justify-content:space-between;align-items:baseline">
-            <div class="size-option-label">Small</div>
-            <div class="size-option-sub">~1.1" × 1.1"</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span class="size-option-label">Small</span>
+            <span class="size-option-dim">~1.1" × 1.1"</span>
           </div>
-          <div class="size-option-sub" style="margin-top:2px">Approx. 56 labels per page (7 × 8)</div>
+          <div class="size-option-count">~56 per page &nbsp;(7 cols × 8 rows)</div>
         </div>
       </label>
       <label class="size-option">
         <input type="radio" name="qr-size" value="130" onchange="selectQRSize(this)" />
-        <div style="flex:1">
-          <div style="display:flex;justify-content:space-between;align-items:baseline">
-            <div class="size-option-label">Medium</div>
-            <div class="size-option-sub">~1.8" × 1.8"</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span class="size-option-label">Medium</span>
+            <span class="size-option-dim">~1.8" × 1.8"</span>
           </div>
-          <div class="size-option-sub" style="margin-top:2px">Approx. 20 labels per page (4 × 5)</div>
+          <div class="size-option-count">~20 per page &nbsp;(4 cols × 5 rows)</div>
         </div>
       </label>
       <label class="size-option">
         <input type="radio" name="qr-size" value="200" onchange="selectQRSize(this)" />
-        <div style="flex:1">
-          <div style="display:flex;justify-content:space-between;align-items:baseline">
-            <div class="size-option-label">Large</div>
-            <div class="size-option-sub">~2.8" × 2.8"</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span class="size-option-label">Large</span>
+            <span class="size-option-dim">~2.8" × 2.8"</span>
           </div>
-          <div class="size-option-sub" style="margin-top:2px">Approx. 6 labels per page (2 × 3)</div>
+          <div class="size-option-count">~6 per page &nbsp;(2 cols × 3 rows)</div>
         </div>
       </label>
     </div>
