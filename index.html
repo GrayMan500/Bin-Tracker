@@ -2225,7 +2225,8 @@ function esc(str) { return window.esc(str); }
 
 // ─── KEYBOARD SHORTCUTS ───────────────────────────────────────
 document.getElementById('new-bin-name').addEventListener('keydown', e => { if (e.key === 'Enter') addBin(); });
-document.getElementById('new-individual-name').addEventListener('keydown', e => { if (e.key === 'Enter') openAddIndividualModal(); });
+const _indNameEl = document.getElementById('new-individual-name');
+if (_indNameEl) _indNameEl.addEventListener('keydown', e => { if (e.key === 'Enter') openAddIndividualModal(); });
 document.getElementById('search-input').addEventListener('keydown', e => { if (e.key === 'Escape') { e.target.value = ''; onSearch(); } });
 document.getElementById('edit-item-name').addEventListener('keydown', e => { if (e.key === 'Enter') saveEditItem(); if (e.key === 'Escape') closeEditModal(); });
 document.getElementById('rename-input').addEventListener('keydown', e => {
