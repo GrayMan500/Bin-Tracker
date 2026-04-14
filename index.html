@@ -261,6 +261,62 @@
   .field-group { display: flex; flex-direction: column; gap: 4px; }
   .field-label { font-size: 0.65rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
 
+
+  /* ── INDIVIDUAL ITEMS ── */
+  .individual-grid {
+    padding: 0 24px 40px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+  .individual-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.15s;
+    display: flex;
+    flex-direction: column;
+  }
+  .individual-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .individual-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    gap: 8px;
+  }
+  .individual-card-top .item-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.2rem;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .individual-card-body {
+    padding: 10px 16px;
+    flex: 1;
+    font-size: 0.75rem;
+    color: var(--muted);
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .individual-card-footer {
+    padding: 10px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--surface2);
+    gap: 8px;
+  }
+  .individual-val { font-size: 0.75rem; letter-spacing: 0.05em; }
+  .individual-val strong { color: var(--accent); }
+
   /* ── SYNC STATUS ── */
   /* ── HEADER ── */
   header {
@@ -347,6 +403,62 @@
 
   .field-group { display: flex; flex-direction: column; gap: 4px; }
   .field-label { font-size: 0.65rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
+
+
+  /* ── INDIVIDUAL ITEMS ── */
+  .individual-grid {
+    padding: 0 24px 40px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+  .individual-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.15s;
+    display: flex;
+    flex-direction: column;
+  }
+  .individual-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .individual-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    gap: 8px;
+  }
+  .individual-card-top .item-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.2rem;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .individual-card-body {
+    padding: 10px 16px;
+    flex: 1;
+    font-size: 0.75rem;
+    color: var(--muted);
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .individual-card-footer {
+    padding: 10px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--surface2);
+    gap: 8px;
+  }
+  .individual-val { font-size: 0.75rem; letter-spacing: 0.05em; }
+  .individual-val strong { color: var(--accent); }
 
   /* ── SYNC STATUS ── */
   .sync-badge {
@@ -790,6 +902,7 @@
     .section-title-bar { padding: 0 16px 6px; }
     .add-bin-bar { padding: 10px 16px; }
     .bins-grid { padding: 0 16px 32px; grid-template-columns: 1fr; gap: 12px; }
+    .individual-grid { padding: 0 16px 32px; grid-template-columns: 1fr; gap: 12px; }
     .search-results { padding: 0 16px 32px; }
 
     .detail-header { padding: 14px 16px 12px; gap: 8px; }
@@ -919,6 +1032,17 @@
   </div>
   <div class="search-results" id="search-results" style="display:none"></div>
   <div class="bins-grid" id="bins-grid"></div>
+
+  <!-- ═══ INDIVIDUAL ITEMS SECTION ═══ -->
+  <div class="section-title-bar" style="display:flex;align-items:center;gap:12px;margin-top:8px">
+    <span class="section-title">Individual Items</span>
+    <span style="font-size:0.72rem;color:var(--muted);letter-spacing:0.05em">Large items not in a bin</span>
+  </div>
+  <div class="add-bin-bar" style="padding-top:0">
+    <input type="text" id="new-individual-name" placeholder="Item name (e.g. Crock Pot, Flight Pedals…)" />
+    <button onclick="openAddIndividualModal()">+ Add Item</button>
+  </div>
+  <div class="individual-grid" id="individual-grid"></div>
 </div>
 
 <!-- ═══ DETAIL VIEW ═══ -->
@@ -1101,10 +1225,13 @@ const auth = getAuth(app);
 
 // ─── STATE ────────────────────────────────────────────────────
 let bins = [];
+let individualItems = [];
 let activeBinId = null;
 let currentUser = null;
 let isViewOnly  = false;
 let unsubscribeBins = null;
+let unsubscribeIndividual = null;
+let editingIndividualId = null;
 
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 
@@ -1118,7 +1245,9 @@ window.signInWithGoogle = async function() {
 window.signOut = async function() {
   if (unsubscribeBins) { unsubscribeBins(); unsubscribeBins = null; }
   bins = [];
+  individualItems = [];
   currentUser = null;
+  if (unsubscribeIndividual) { unsubscribeIndividual(); unsubscribeIndividual = null; }
   await fbSignOut(auth);
   document.getElementById('user-chip').style.display = 'none';
   document.getElementById('auth-screen').style.display = 'flex';
@@ -1153,6 +1282,20 @@ function applyViewOnly() {
 
 function startBinsListener(userId) {
   if (unsubscribeBins) unsubscribeBins();
+  if (unsubscribeIndividual) unsubscribeIndividual();
+
+  // Individual items listener
+  const indCol = userId
+    ? query(collection(db, 'individual_items'), where('ownerId', '==', userId))
+    : collection(db, 'individual_items');
+  unsubscribeIndividual = onSnapshot(indCol, (snapshot) => {
+    individualItems = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    individualItems.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+    renderIndividualItems();
+    onSearch();
+    renderOverview();
+  });
+
   const binsCol = userId
     ? query(collection(db, 'bins'), where('ownerId', '==', userId))
     : collection(db, 'bins');
@@ -1552,16 +1695,21 @@ window.onSearch = function() {
   if (!q) {
     resultsEl.style.display = 'none';
     gridEl.style.display = '';
+    document.getElementById('individual-grid').style.display = '';
     countEl.textContent = '';
     return;
   }
   const hits = [];
   bins.forEach(bin => {
     (bin.items||[]).forEach(item => {
-      if (item.name.toLowerCase().includes(q)) hits.push({ bin, item });
+      if (item.name.toLowerCase().includes(q)) hits.push({ label: '📦 ' + bin.name, item, onClick: 'showDetail(\'' + bin.id + '\')' });
     });
   });
+  individualItems.forEach(item => {
+    if (item.name.toLowerCase().includes(q)) hits.push({ label: '📦 Individual', item, onClick: 'openEditIndividualModal(\'' + item.id + '\')' });
+  });
   gridEl.style.display = 'none';
+  document.getElementById('individual-grid').style.display = q ? 'none' : '';
   countEl.textContent = hits.length + ' result' + (hits.length !== 1 ? 's' : '');
   if (hits.length === 0) {
     resultsEl.style.display = 'block';
@@ -1574,17 +1722,17 @@ window.onSearch = function() {
     if (idx === -1) return esc(text);
     return esc(text.slice(0, idx)) + '<mark>' + esc(text.slice(idx, idx + q.length)) + '</mark>' + esc(text.slice(idx + q.length));
   }
-  resultsEl.innerHTML = hits.map(({ bin, item }) => {
+  resultsEl.innerHTML = hits.map(({ label, item, onClick }) => {
     const qty = item.qty || 1;
     const lineVal = (item.value || 0) * qty;
     const metaParts = [];
     if (qty > 1) metaParts.push('Qty: ' + qty);
     if (item.size) metaParts.push('Size: ' + item.size);
     if (item.link) metaParts.push('<a href="' + esc(item.link) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:var(--accent)">↗ Link</a>');
-    return '<div class="search-result-row" onclick="showDetail(\'' + bin.id + '\')">' +
+    return '<div class="search-result-row" onclick="' + onClick + '">' +
       '<div><div class="search-result-name">' + highlight(item.name, q) + '</div>' +
       (metaParts.length ? '<div class="search-result-meta">' + metaParts.join(' · ') + '</div>' : '') + '</div>' +
-      '<div><div class="search-result-bin">📦 ' + esc(bin.name) + '</div><div class="search-result-val">$' + lineVal.toFixed(2) + '</div></div>' +
+      '<div><div class="search-result-bin">' + label + '</div><div class="search-result-val">$' + lineVal.toFixed(2) + '</div></div>' +
       '</div>';
   }).join('');
 }
@@ -1807,7 +1955,7 @@ function renderOverview() {
   const panel = document.getElementById('overview-grid');
   if (!panel) return;
 
-  const allItems = bins.flatMap(b => b.items || []);
+  const allItems = [...bins.flatMap(b => b.items || []), ...individualItems];
   const totalBins = bins.length;
   const totalItems = allItems.reduce((s, i) => s + (i.qty || 1), 0);
   const uniqueItems = allItems.length;
@@ -1846,7 +1994,7 @@ function renderOverview() {
 
 // ─── CSV EXPORT ───────────────────────────────────────────────
 window.exportCSV = function() {
-  if (bins.length === 0) { alert('No bins to export yet!'); return; }
+  if (bins.length === 0 && individualItems.length === 0) { alert('No data to export yet!'); return; }
   const rows = [['Bin', 'Item', 'Qty', 'Size', 'Additional Info', 'Value Per Item ($)', 'Line Total ($)', 'Purchase Link']];
   bins.forEach(bin => {
     if (!bin.items || bin.items.length === 0) {
@@ -1861,6 +2009,15 @@ window.exportCSV = function() {
       rows.push(['','','','','','','']);
     }
   });
+  if (individualItems.length > 0) {
+    rows.push(['Individual Items', '(not in a bin)', '', '', '', '', '']);
+    individualItems.forEach(item => {
+      const qty = item.qty || 1;
+      rows.push(['Individual', item.name, qty, item.size||'', item.notes||'', (item.value||0).toFixed(2), ((item.value||0)*qty).toFixed(2), item.link||'']);
+    });
+    const indTotal = individualItems.reduce((s,i)=>s+(i.value||0)*(i.qty||1),0);
+    rows.push(['Individual — TOTAL','','','','','',indTotal.toFixed(2),'']);
+  }
   const csv = rows.map(r => r.map(cell => '"' + String(cell).replace(/"/g,'""') + '"').join(',')).join('\r\n');
   const blob = new Blob([csv], { type: 'text/csv' });
   const a = document.createElement('a');
@@ -1939,11 +2096,13 @@ window.printAllQRSized = function(qrSize) {
 // ─── INSURANCE REPORT ─────────────────────────────────────────
 window.exportInsurance = function() {
   if (bins.length === 0) { alert('No bins to report yet!'); return; }
-  const allItems = bins.flatMap(b=>(b.items||[]).map(i=>({...i,binName:b.name})));
+  const allItems = [...bins.flatMap(b=>(b.items||[]).map(i=>({...i,binName:b.name}))), ...individualItems.map(i=>({...i,binName:'Individual'}))];
   const grandTotal = allItems.reduce((s,i)=>s+(i.value||0)*(i.qty||1),0);
   const date = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const indRows = individualItems.length > 0 ? ('<tr><td colspan="5" style="padding:10px 10px 4px;background:#f0f0f0;font-weight:700;font-size:1rem">📦 INDIVIDUAL ITEMS (not in a bin)<\/td><\/tr>' + individualItems.map(i=>'<tr><td style="padding:6px 10px;border-bottom:1px solid #eee">'+(i.name||'').replace(/</g,'&lt;')+'<\/td><td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:center">'+(i.qty||1)+'<\/td><td style="padding:6px 10px;border-bottom:1px solid #eee">'+(i.size||'—')+'<\/td><td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right">$'+(i.value||0).toFixed(2)+'<\/td><td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right;font-weight:600">$'+((i.value||0)*(i.qty||1)).toFixed(2)+'<\/td><\/tr>').join('') + '<tr><td colspan="4" style="padding:6px 10px;text-align:right;font-style:italic;color:#555">Individual Total<\/td><td style="padding:6px 10px;text-align:right;font-weight:700">$'+individualItems.reduce((s,i)=>s+(i.value||0)*(i.qty||1),0).toFixed(2)+'<\/td><\/tr><tr><td colspan="5" style="padding:4px"><\/td><\/tr>') : '';
   const rows = bins.map((bin,bi)=>{ const items=bin.items||[]; const binTotal=items.reduce((s,i)=>s+(i.value||0)*(i.qty||1),0); const itemRows=items.map(i=>'<tr><td style="padding:6px 10px;border-bottom:1px solid #eee">'+(i.name||'').replace(/</g,'&lt;')+'<\/td><td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:center">'+(i.qty||1)+'<\/td><td style="padding:6px 10px;border-bottom:1px solid #eee">'+(i.size||'—')+'<\/td><td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right">$'+(i.value||0).toFixed(2)+'<\/td><td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right;font-weight:600">$'+((i.value||0)*(i.qty||1)).toFixed(2)+'<\/td><\/tr>').join(''); return '<tr><td colspan="5" style="padding:10px 10px 4px;background:#f7f7f7;font-weight:700;font-size:1rem">📦 BIN #'+(bi+1)+' — '+bin.name.replace(/</g,'&lt;')+'<\/td><\/tr>'+itemRows+'<tr><td colspan="4" style="padding:6px 10px;text-align:right;font-style:italic;color:#555">Bin Total<\/td><td style="padding:6px 10px;text-align:right;font-weight:700">$'+binTotal.toFixed(2)+'<\/td><\/tr><tr><td colspan="5" style="padding:4px"><\/td><\/tr>'; }).join('');
   const win = window.open('','_blank');
+  const allRows = rows.join('') + indRows;
   win.document.write('<!DOCTYPE html><html><head><title>Insurance Report<\/title><style>body{font-family:Georgia,serif;padding:40px;color:#111;max-width:900px;margin:0 auto}h1{font-size:1.8rem;margin-bottom:4px}.sub{font-size:.9rem;color:#555;margin-bottom:24px}table{width:100%;border-collapse:collapse;font-size:.88rem}th{text-align:left;padding:8px 10px;border-bottom:2px solid #111;font-size:.75rem;letter-spacing:.08em;text-transform:uppercase}th:last-child,th:nth-child(4){text-align:right}.grand{margin-top:24px;text-align:right;font-size:1.1rem;font-weight:bold;border-top:3px double #111;padding-top:12px}.footer{margin-top:40px;font-size:.78rem;color:#888;border-top:1px solid #ddd;padding-top:12px}@media print{body{padding:20px}}<\/style><\/head><body><h1>Moving Inventory — Insurance Report<\/h1><div class="sub">Prepared: '+date+' &nbsp;·&nbsp; Total Bins: '+bins.length+' &nbsp;·&nbsp; Total Items: '+allItems.reduce((s,i)=>s+(i.qty||1),0)+'<\/div><table><thead><tr><th>Item<\/th><th>Qty<\/th><th>Size<\/th><th>Unit Value<\/th><th>Line Total<\/th><\/tr><\/thead><tbody>'+rows+'<\/tbody><\/table><div class="grand">Grand Total: $'+grandTotal.toFixed(2)+'<\/div><div class="footer">Generated by Bin Tracker for insurance and moving documentation. Values are owner estimates.<\/div><scr'+'ipt>window.onload=()=>window.print();<\/scr'+'ipt><\/body><\/html>');
   win.document.close();
 }
@@ -1960,6 +2119,104 @@ window.rDragOver = function(e) { e.preventDefault(); }
 window.rDrop = function(e) { e.preventDefault(); const t=e.currentTarget.dataset.id; if(!dragSrcId||dragSrcId===t) return; const si=renumberOrder.indexOf(dragSrcId),ti=renumberOrder.indexOf(t); renumberOrder.splice(si,1); renumberOrder.splice(ti,0,dragSrcId); renderRenumberList(); }
 window.saveRenumber = async function() { setSyncStatus('syncing'); const now=Date.now(); for(let i=0;i<renumberOrder.length;i++) await updateDoc(doc(collection(db,'bins'),renumberOrder[i]),{createdAt:now+i}); setSyncStatus('synced'); closeRenumberModal(); }
 
+
+// ─── INDIVIDUAL ITEMS ────────────────────────────────────────
+window.openAddIndividualModal = function() {
+  const nameInput = document.getElementById('new-individual-name');
+  editingIndividualId = null;
+  document.getElementById('individual-modal-title').textContent = 'Add Individual Item';
+  document.getElementById('ind-name').value = nameInput.value.trim();
+  document.getElementById('ind-qty').value = '1';
+  document.getElementById('ind-value').value = '';
+  document.getElementById('ind-size').value = '';
+  document.getElementById('ind-link').value = '';
+  document.getElementById('ind-notes').value = '';
+  document.getElementById('individual-modal').classList.add('open');
+  setTimeout(() => document.getElementById('ind-name').focus(), 50);
+  nameInput.value = '';
+}
+
+window.openEditIndividualModal = function(itemId) {
+  const item = individualItems.find(i => i.id === itemId);
+  if (!item) return;
+  editingIndividualId = itemId;
+  document.getElementById('individual-modal-title').textContent = 'Edit Item';
+  document.getElementById('ind-name').value = item.name || '';
+  document.getElementById('ind-qty').value = item.qty || 1;
+  document.getElementById('ind-value').value = item.value || '';
+  document.getElementById('ind-size').value = item.size || '';
+  document.getElementById('ind-link').value = item.link || '';
+  document.getElementById('ind-notes').value = item.notes || '';
+  document.getElementById('individual-modal').classList.add('open');
+  setTimeout(() => document.getElementById('ind-name').focus(), 50);
+}
+
+window.closeIndividualModal = function() {
+  document.getElementById('individual-modal').classList.remove('open');
+  editingIndividualId = null;
+}
+
+window.saveIndividualItem = async function() {
+  const name  = document.getElementById('ind-name').value.trim();
+  const qty   = Math.max(1, parseInt(document.getElementById('ind-qty').value) || 1);
+  const value = parseFloat(document.getElementById('ind-value').value) || 0;
+  const size  = document.getElementById('ind-size').value.trim();
+  const link  = document.getElementById('ind-link').value.trim();
+  const notes = document.getElementById('ind-notes').value.trim();
+  if (!name) { document.getElementById('ind-name').focus(); return; }
+
+  setSyncStatus('syncing');
+  if (editingIndividualId) {
+    await updateDoc(doc(collection(db, 'individual_items'), editingIndividualId), { name, qty, value, size, link, notes });
+  } else {
+    const id = uid();
+    await setDoc(doc(collection(db, 'individual_items'), id), {
+      name, qty, value, size, link, notes,
+      createdAt: Date.now(),
+      ownerId: currentUser ? currentUser.uid : 'viewonly'
+    });
+  }
+  setSyncStatus('synced');
+  closeIndividualModal();
+}
+
+window.deleteIndividualItem = async function(itemId) {
+  const item = individualItems.find(i => i.id === itemId);
+  if (item) trashItems.push({ type: 'individual', itemName: item.name, data: JSON.parse(JSON.stringify(item)), deletedAt: Date.now() });
+  setSyncStatus('syncing');
+  await deleteDoc(doc(collection(db, 'individual_items'), itemId));
+  setSyncStatus('synced');
+}
+
+function renderIndividualItems() {
+  const grid = document.getElementById('individual-grid');
+  if (!grid) return;
+  if (individualItems.length === 0) {
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="icon">📦</div><p>No individual items yet.<br>Add large items that have their own box.</p></div>';
+    return;
+  }
+  grid.innerHTML = individualItems.map(item => {
+    const qty = item.qty || 1;
+    const lineVal = (item.value || 0) * qty;
+    const metaParts = [];
+    if (qty > 1) metaParts.push('Qty: ' + qty);
+    if (item.size) metaParts.push(item.size);
+    if (item.notes) metaParts.push(item.notes);
+    return '<div class="individual-card" onclick="openEditIndividualModal(\'' + item.id + '\')">' +
+      '<div class="individual-card-top">' +
+        '<span class="item-label">' + esc(item.name) + '</span>' +
+        (item.link ? '<a href="' + esc(item.link) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:var(--accent);font-size:0.75rem;flex-shrink:0">↗ Link</a>' : '') +
+      '</div>' +
+      '<div class="individual-card-body">' +
+        (metaParts.length ? metaParts.map(p => '<span>' + esc(p) + '</span>').join('') : '<span style="color:var(--border)">No details</span>') +
+      '</div>' +
+      '<div class="individual-card-footer">' +
+        '<div class="individual-val">Est. <strong>$' + lineVal.toFixed(2) + '</strong></div>' +
+        '<button class="danger" style="padding:5px 10px;font-size:0.7rem" onclick="event.stopPropagation();deleteIndividualItem(\'' + item.id + '\')">✕ Delete</button>' +
+      '</div></div>';
+  }).join('');
+}
+
 // ─── UTILS ────────────────────────────────────────────────────
 window.esc = function(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -1968,6 +2225,7 @@ function esc(str) { return window.esc(str); }
 
 // ─── KEYBOARD SHORTCUTS ───────────────────────────────────────
 document.getElementById('new-bin-name').addEventListener('keydown', e => { if (e.key === 'Enter') addBin(); });
+document.getElementById('new-individual-name').addEventListener('keydown', e => { if (e.key === 'Enter') openAddIndividualModal(); });
 document.getElementById('search-input').addEventListener('keydown', e => { if (e.key === 'Escape') { e.target.value = ''; onSearch(); } });
 document.getElementById('edit-item-name').addEventListener('keydown', e => { if (e.key === 'Enter') saveEditItem(); if (e.key === 'Escape') closeEditModal(); });
 document.getElementById('rename-input').addEventListener('keydown', e => {
@@ -2044,6 +2302,46 @@ showView('main-view'); // set a base, overlay covers it
     <div class="modal-actions">
       <button class="ghost" onclick="closeRenumberModal()">Cancel</button>
       <button onclick="saveRenumber()">Save Order</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══ ADD/EDIT INDIVIDUAL ITEM MODAL ═══ -->
+<div class="modal-overlay" id="individual-modal" onclick="if(event.target===this)closeIndividualModal()">
+  <div class="modal" style="width:420px">
+    <h3 id="individual-modal-title">Add Individual Item</h3>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px">
+      <div class="field-group">
+        <span class="field-label">Item name</span>
+        <input type="text" id="ind-name" placeholder="e.g. Crock Pot" />
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="field-group">
+          <span class="field-label">Qty</span>
+          <input type="number" id="ind-qty" value="1" min="1" step="1" />
+        </div>
+        <div class="field-group">
+          <span class="field-label">Value per item ($)</span>
+          <input type="number" id="ind-value" placeholder="0.00" min="0" step="0.01" />
+        </div>
+      </div>
+      <div class="field-group">
+        <span class="field-label">Size (optional)</span>
+        <input type="text" id="ind-size" placeholder="e.g. Large, 12qt…" />
+      </div>
+      <div class="field-group">
+        <span class="field-label">Purchase link (optional)</span>
+        <input type="url" id="ind-link" placeholder="https://…" />
+      </div>
+      <div class="field-group">
+        <span class="field-label">Additional info (optional)</span>
+        <input type="text" id="ind-notes" placeholder="e.g. Fragile, wrap carefully…" />
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="ghost" onclick="closeIndividualModal()">Cancel</button>
+      <button onclick="saveIndividualItem()">Save</button>
     </div>
   </div>
 </div>
