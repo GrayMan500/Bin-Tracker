@@ -405,60 +405,6 @@
   .field-label { font-size: 0.65rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
 
 
-  /* ── INDIVIDUAL ITEMS ── */
-  .individual-grid {
-    padding: 0 24px 40px;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 16px;
-  }
-  .individual-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    overflow: hidden;
-    cursor: pointer;
-    transition: border-color 0.15s, transform 0.15s;
-    display: flex;
-    flex-direction: column;
-  }
-  .individual-card:hover { border-color: var(--accent); transform: translateY(-2px); }
-  .individual-card-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 16px;
-    border-bottom: 1px solid var(--border);
-    gap: 8px;
-  }
-  .individual-card-top .item-label {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.2rem;
-    color: var(--accent);
-    letter-spacing: 0.05em;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .individual-card-body {
-    padding: 10px 16px;
-    flex: 1;
-    font-size: 0.75rem;
-    color: var(--muted);
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-  }
-  .individual-card-footer {
-    padding: 10px 16px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: var(--surface2);
-    gap: 8px;
-  }
-  .individual-val { font-size: 0.75rem; letter-spacing: 0.05em; }
-  .individual-val strong { color: var(--accent); }
 
   /* ── SYNC STATUS ── */
   .sync-badge {
@@ -1039,8 +985,8 @@
     <span style="font-size:0.72rem;color:var(--muted);letter-spacing:0.05em">Large items not in a bin</span>
   </div>
   <div class="add-bin-bar" style="padding-top:0">
-    <input type="text" id="new-individual-name" placeholder="Item name (e.g. Crock Pot, Flight Pedals…)" />
-    <button onclick="openAddIndividualModal()">+ Add Item</button>
+    <input type="text" id="ind-quick-name" placeholder="Item name (e.g. Crock Pot, Flight Pedals…)" onkeydown="if(event.key==='Enter')indOpen()" />
+    <button onclick="indOpen()">+ Add Item</button>
   </div>
   <div class="individual-grid" id="individual-grid"></div>
 </div>
@@ -1706,7 +1652,7 @@ window.onSearch = function() {
     });
   });
   individualItems.forEach(item => {
-    if (item.name.toLowerCase().includes(q)) hits.push({ label: '📦 Individual', item, onClick: 'openEditIndividualModal(\'' + item.id + '\')' });
+    if (item.name.toLowerCase().includes(q)) hits.push({ label: '📦 Individual', item, onClick: 'indOpen(\'' + item.id + '\')' });
   });
   gridEl.style.display = 'none';
   document.getElementById('individual-grid').style.display = q ? 'none' : '';
@@ -2120,100 +2066,127 @@ window.rDrop = function(e) { e.preventDefault(); const t=e.currentTarget.dataset
 window.saveRenumber = async function() { setSyncStatus('syncing'); const now=Date.now(); for(let i=0;i<renumberOrder.length;i++) await updateDoc(doc(collection(db,'bins'),renumberOrder[i]),{createdAt:now+i}); setSyncStatus('synced'); closeRenumberModal(); }
 
 
+
+
 // ─── INDIVIDUAL ITEMS ────────────────────────────────────────
-window.openAddIndividualModal = function() {
-  const nameInput = document.getElementById('new-individual-name');
-  editingIndividualId = null;
-  document.getElementById('individual-modal-title').textContent = 'Add Individual Item';
-  document.getElementById('ind-name').value = nameInput.value.trim();
+let _indEditId = null;
+
+function indReset() {
+  _indEditId = null;
+  ['ind-name','ind-size','ind-link','ind-notes'].forEach(id => { document.getElementById(id).value = ''; });
   document.getElementById('ind-qty').value = '1';
   document.getElementById('ind-value').value = '';
-  document.getElementById('ind-size').value = '';
-  document.getElementById('ind-link').value = '';
-  document.getElementById('ind-notes').value = '';
-  document.getElementById('individual-modal').classList.add('open');
-  setTimeout(() => document.getElementById('ind-name').focus(), 50);
-  nameInput.value = '';
 }
 
-window.openEditIndividualModal = function(itemId) {
+window.indOpen = function(itemId) {
+  if (itemId) {
+    const item = individualItems.find(i => i.id === itemId);
+    if (!item) return;
+    _indEditId = itemId;
+    document.getElementById('ind-modal-title').textContent = 'Edit Individual Item';
+    document.getElementById('ind-name').value  = item.name  || '';
+    document.getElementById('ind-qty').value   = item.qty   || 1;
+    document.getElementById('ind-value').value = item.value !== undefined ? item.value : '';
+    document.getElementById('ind-size').value  = item.size  || '';
+    document.getElementById('ind-link').value  = item.link  || '';
+    document.getElementById('ind-notes').value = item.notes || '';
+  } else {
+    indReset();
+    document.getElementById('ind-modal-title').textContent = 'Add Individual Item';
+    // Pre-fill name from the quick-add input
+    const quick = document.getElementById('ind-quick-name');
+    if (quick) { document.getElementById('ind-name').value = quick.value.trim(); quick.value = ''; }
+  }
+  document.getElementById('ind-modal').classList.add('open');
+  setTimeout(() => document.getElementById('ind-name').focus(), 60);
+}
+
+window.indClose = function() {
+  document.getElementById('ind-modal').classList.remove('open');
+  indReset();
+}
+
+window.indSave = async function() {
+  const nameEl  = document.getElementById('ind-name');
+  const name    = nameEl.value.trim();
+  if (!name) { nameEl.focus(); nameEl.style.borderColor = 'var(--danger)'; setTimeout(() => nameEl.style.borderColor = '', 1500); return; }
+  const qty     = Math.max(1, parseInt(document.getElementById('ind-qty').value)   || 1);
+  const value   = parseFloat(document.getElementById('ind-value').value)           || 0;
+  const size    = document.getElementById('ind-size').value.trim();
+  const link    = document.getElementById('ind-link').value.trim();
+  const notes   = document.getElementById('ind-notes').value.trim();
+
+  const btn = document.getElementById('ind-save-btn');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+  setSyncStatus('syncing');
+
+  try {
+    if (_indEditId) {
+      await updateDoc(doc(collection(db, 'individual_items'), _indEditId), { name, qty, value, size, link, notes });
+    } else {
+      const id = uid();
+      await setDoc(doc(collection(db, 'individual_items'), id), {
+        name, qty, value, size, link, notes,
+        createdAt: Date.now(),
+        ownerId: currentUser ? currentUser.uid : 'viewonly'
+      });
+    }
+    setSyncStatus('synced');
+    indClose();
+  } catch(e) {
+    console.error('indSave error:', e);
+    alert('Save failed: ' + e.message);
+    setSyncStatus('error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save';
+  }
+}
+
+window.indDelete = async function(itemId, e) {
+  if (e) e.stopPropagation();
   const item = individualItems.find(i => i.id === itemId);
   if (!item) return;
-  editingIndividualId = itemId;
-  document.getElementById('individual-modal-title').textContent = 'Edit Item';
-  document.getElementById('ind-name').value = item.name || '';
-  document.getElementById('ind-qty').value = item.qty || 1;
-  document.getElementById('ind-value').value = item.value || '';
-  document.getElementById('ind-size').value = item.size || '';
-  document.getElementById('ind-link').value = item.link || '';
-  document.getElementById('ind-notes').value = item.notes || '';
-  document.getElementById('individual-modal').classList.add('open');
-  setTimeout(() => document.getElementById('ind-name').focus(), 50);
-}
-
-window.closeIndividualModal = function() {
-  document.getElementById('individual-modal').classList.remove('open');
-  editingIndividualId = null;
-}
-
-window.saveIndividualItem = async function() {
-  const name  = document.getElementById('ind-name').value.trim();
-  const qty   = Math.max(1, parseInt(document.getElementById('ind-qty').value) || 1);
-  const value = parseFloat(document.getElementById('ind-value').value) || 0;
-  const size  = document.getElementById('ind-size').value.trim();
-  const link  = document.getElementById('ind-link').value.trim();
-  const notes = document.getElementById('ind-notes').value.trim();
-  if (!name) { document.getElementById('ind-name').focus(); return; }
-
+  trashItems.push({ type: 'individual', itemName: item.name, data: JSON.parse(JSON.stringify(item)), deletedAt: Date.now() });
   setSyncStatus('syncing');
-  if (editingIndividualId) {
-    await updateDoc(doc(collection(db, 'individual_items'), editingIndividualId), { name, qty, value, size, link, notes });
-  } else {
-    const id = uid();
-    await setDoc(doc(collection(db, 'individual_items'), id), {
-      name, qty, value, size, link, notes,
-      createdAt: Date.now(),
-      ownerId: currentUser ? currentUser.uid : 'viewonly'
-    });
+  try {
+    await deleteDoc(doc(collection(db, 'individual_items'), itemId));
+    setSyncStatus('synced');
+  } catch(e) {
+    console.error('indDelete error:', e);
+    setSyncStatus('error');
   }
-  setSyncStatus('synced');
-  closeIndividualModal();
-}
-
-window.deleteIndividualItem = async function(itemId) {
-  const item = individualItems.find(i => i.id === itemId);
-  if (item) trashItems.push({ type: 'individual', itemName: item.name, data: JSON.parse(JSON.stringify(item)), deletedAt: Date.now() });
-  setSyncStatus('syncing');
-  await deleteDoc(doc(collection(db, 'individual_items'), itemId));
-  setSyncStatus('synced');
 }
 
 function renderIndividualItems() {
   const grid = document.getElementById('individual-grid');
   if (!grid) return;
   if (individualItems.length === 0) {
-    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="icon">📦</div><p>No individual items yet.<br>Add large items that have their own box.</p></div>';
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="icon" style="font-size:2rem">📦</div><p>No individual items yet.<br>Add large items that have their own box.</p></div>';
     return;
   }
   grid.innerHTML = individualItems.map(item => {
-    const qty = item.qty || 1;
+    const qty     = item.qty || 1;
     const lineVal = (item.value || 0) * qty;
-    const metaParts = [];
-    if (qty > 1) metaParts.push('Qty: ' + qty);
-    if (item.size) metaParts.push(item.size);
-    if (item.notes) metaParts.push(item.notes);
-    return '<div class="individual-card" onclick="openEditIndividualModal(\'' + item.id + '\')">' +
+    const meta    = [
+      qty > 1 ? 'Qty: ' + qty : '',
+      item.size  ? 'Size: ' + item.size : '',
+      item.notes ? item.notes : ''
+    ].filter(Boolean).join(' · ');
+    return '<div class="individual-card" onclick="indOpen(\'' + item.id + '\')">' +
       '<div class="individual-card-top">' +
         '<span class="item-label">' + esc(item.name) + '</span>' +
-        (item.link ? '<a href="' + esc(item.link) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:var(--accent);font-size:0.75rem;flex-shrink:0">↗ Link</a>' : '') +
+        (item.link ? '<a href="' + esc(item.link) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:var(--accent);font-size:0.75rem;flex-shrink:0;white-space:nowrap">↗ Link</a>' : '') +
       '</div>' +
       '<div class="individual-card-body">' +
-        (metaParts.length ? metaParts.map(p => '<span>' + esc(p) + '</span>').join('') : '<span style="color:var(--border)">No details</span>') +
+        (meta ? '<span>' + esc(meta) + '</span>' : '<span style="color:var(--border)">No details</span>') +
       '</div>' +
       '<div class="individual-card-footer">' +
         '<div class="individual-val">Est. <strong>$' + lineVal.toFixed(2) + '</strong></div>' +
-        '<button class="danger" style="padding:5px 10px;font-size:0.7rem" onclick="event.stopPropagation();deleteIndividualItem(\'' + item.id + '\')">✕ Delete</button>' +
-      '</div></div>';
+        '<button class="danger" style="padding:5px 10px;font-size:0.7rem" onclick="indDelete(\'' + item.id + '\', event)">✕ Delete</button>' +
+      '</div>' +
+    '</div>';
   }).join('');
 }
 
@@ -2225,8 +2198,6 @@ function esc(str) { return window.esc(str); }
 
 // ─── KEYBOARD SHORTCUTS ───────────────────────────────────────
 document.getElementById('new-bin-name').addEventListener('keydown', e => { if (e.key === 'Enter') addBin(); });
-const _indNameEl = document.getElementById('new-individual-name');
-if (_indNameEl) _indNameEl.addEventListener('keydown', e => { if (e.key === 'Enter') openAddIndividualModal(); });
 document.getElementById('search-input').addEventListener('keydown', e => { if (e.key === 'Escape') { e.target.value = ''; onSearch(); } });
 document.getElementById('edit-item-name').addEventListener('keydown', e => { if (e.key === 'Enter') saveEditItem(); if (e.key === 'Escape') closeEditModal(); });
 document.getElementById('rename-input').addEventListener('keydown', e => {
@@ -2308,11 +2279,12 @@ showView('main-view'); // set a base, overlay covers it
 </div>
 
 
-<!-- ═══ ADD/EDIT INDIVIDUAL ITEM MODAL ═══ -->
-<div class="modal-overlay" id="individual-modal" onclick="if(event.target===this)closeIndividualModal()">
+
+<!-- ═══ INDIVIDUAL ITEM MODAL ═══ -->
+<div class="modal-overlay" id="ind-modal" onclick="if(event.target===this)indClose()">
   <div class="modal" style="width:420px">
-    <h3 id="individual-modal-title">Add Individual Item</h3>
-    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px">
+    <h3 id="ind-modal-title">Add Individual Item</h3>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
       <div class="field-group">
         <span class="field-label">Item name</span>
         <input type="text" id="ind-name" placeholder="e.g. Crock Pot" />
@@ -2323,13 +2295,13 @@ showView('main-view'); // set a base, overlay covers it
           <input type="number" id="ind-qty" value="1" min="1" step="1" />
         </div>
         <div class="field-group">
-          <span class="field-label">Value per item ($)</span>
+          <span class="field-label">Value ($)</span>
           <input type="number" id="ind-value" placeholder="0.00" min="0" step="0.01" />
         </div>
       </div>
       <div class="field-group">
         <span class="field-label">Size (optional)</span>
-        <input type="text" id="ind-size" placeholder="e.g. Large, 12qt…" />
+        <input type="text" id="ind-size" placeholder="e.g. Large, 6qt…" />
       </div>
       <div class="field-group">
         <span class="field-label">Purchase link (optional)</span>
@@ -2341,8 +2313,8 @@ showView('main-view'); // set a base, overlay covers it
       </div>
     </div>
     <div class="modal-actions">
-      <button class="ghost" onclick="closeIndividualModal()">Cancel</button>
-      <button onclick="saveIndividualItem()">Save</button>
+      <button class="ghost" onclick="indClose()">Cancel</button>
+      <button id="ind-save-btn" onclick="indSave()">Save</button>
     </div>
   </div>
 </div>
